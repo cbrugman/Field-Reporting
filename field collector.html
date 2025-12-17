@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nature Reserve – Field Collector (Autosave)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Merriweather:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2c5f2d;
+      /* Deep forest green */
+      --primary-dark: #1a3c1b;
+      --accent: #ffbe00;
+      /* Golden yellow */
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --bg-body: #f3f4f6;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --radius: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --font-sans: 'Inter', sans-serif;
+      --font-serif: 'Merriweather', serif;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background: var(--bg-body);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      padding-bottom: 40px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    /* Header & Titles */
+    h1,
+    h2,
+    h3 {
+      font-family: var(--font-serif);
+      color: var(--primary-dark);
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.5rem;
+      display: inline-block;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(5px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .toolbar .grow {
+      flex: 1;
+    }
+
+    .toolbar strong {
+      font-family: var(--font-serif);
+      color: var(--primary-dark);
+      font-size: 1.1rem;
+    }
+
+    /* Inputs & Forms */
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      color: var(--text-main);
+      background: #f9fafb;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.1);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    /* Buttons */
+    button {
+      background: white;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 999px;
+      /* Pill shape for toolbar buttons */
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+      line-height: 1.2;
+    }
+
+    button:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+    }
+
+    button.primary {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    button.primary:hover {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+
+    /* Status Pills */
+    .pill {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: #f9fafb;
+      font-weight: 500;
+    }
+
+    .ok {
+      color: #15803d;
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .warn {
+      color: #b45309;
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .danger {
+      color: #b91c1c;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    /* Grids */
+    .grid {
+      display: grid;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .g2 {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .g3 {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    /* Quad Grid for Notes */
+    .quad {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .quad textarea {
+      min-height: 160px;
+    }
+
+    @media (max-width: 700px) {
+      .quad {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .muted {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Sticky top controls -->
+  <div class="toolbar">
+    <strong>Field Collector</strong>
+    <span id="saveState" class="pill">Ready</span>
+    <span id="storageInfo" class="pill">0 B</span>
+    <div class="grow"></div>
+    <button id="btnSaveNow">Save Now</button>
+    <button id="btnClear">Clear</button>
+    <button id="btnImport">Import</button>
+    <button id="btnExport">Export</button>
+    <button id="btnShare" class="primary">Share Data</button>
+  </div>
+
+  <div class="container">
+    <h1>Trip Details</h1>
+    <div class="grid g2">
+      <div><label for="reserve">Location</label><input id="reserve" type="text"
+          placeholder="e.g., Cawthra Mulock Nature Reserve" autocomplete="off"></div>
+      <div><label for="date">Date</label><input id="date" type="date"></div>
+      <div><label for="observers">Observers</label><input id="observers" type="text" placeholder="Names"
+          autocomplete="off"></div>
+    </div>
+
+    <h2>Weather</h2>
+    <div class="grid g3">
+      <div><label for="temp">Temperature (°C)</label><input id="temp" type="text" inputmode="decimal"
+          placeholder="e.g., 18"></div>
+      <div><label for="sky">Sky</label><input id="sky" type="text" placeholder="Clear / Mixed / Overcast"></div>
+      <div><label for="precip">Precipitation</label><input id="precip" type="text" placeholder="None / Light / Showers">
+      </div>
+    </div>
+
+    <h2>Time on Task</h2>
+    <div class="grid g2">
+      <div><label for="start">Start Time</label><input id="start" type="time"></div>
+      <div><label for="end">End Time</label><input id="end" type="time"></div>
+    </div>
+
+    <h2>Notes &amp; Observations</h2>
+    <div class="quad">
+      <div>
+        <label for="activities">Activities Observed</label>
+        <textarea id="activities"
+          placeholder="Walking of pets, use of motorized vehicles, off trail walking, cycling, fires, hunting, fishing, trapping, logging, mining, quarrying, removal of native vegetation, animal, rock and mineral materials, harassment of wildlife, trimming of vegetation"></textarea>
+      </div>
+      <div>
+        <label for="trails">State of Trails</label>
+        <textarea id="trails" placeholder="Key observations, issues, hazards…"></textarea>
+      </div>
+      <div>
+        <label for="anthropogenic">Anthropogenic</label>
+        <textarea id="anthropogenic" placeholder="Human impacts, disturbances, structures…"></textarea>
+      </div>
+      <div>
+        <label for="plants">Plants</label>
+        <textarea id="plants" placeholder="Comma or line separated"></textarea>
+      </div>
+      <div>
+        <label for="animals">Animals</label>
+        <textarea id="animals" placeholder="Comma or line separated"></textarea>
+      </div>
+      <div>
+        <label for="fungi">Fungi</label>
+        <textarea id="fungi" placeholder="Comma or line separated"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Location (optional)</h2>
+    <div class="row">
+      <div class="kv" style="flex:1">
+        <div class="muted">Latitude</div><input id="lat" type="text" inputmode="decimal" placeholder="e.g., 44.051234">
+        <div class="muted">Longitude</div><input id="lon" type="text" inputmode="decimal" placeholder="-79.461234">
+      </div>
+      <button id="btnGPS">Use current GPS</button>
+    </div>
+    <div class="muted" id="gpsStatus" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card" style="display:none">
+    <h2>Live JSON Preview (read-only)</h2>
+    <pre class="mono" id="jsonPreview"
+      style="white-space:pre-wrap;max-height:260px;overflow:auto;background:#f1f5f9;border:1px solid var(--border);border-radius:8px;padding:12px;"></pre>
+    <div class="muted" style="margin-top:8px">This is what is saved in your browser and exported/imported.</div>
+  </div>
+  </div>
+
+  <script>
+    (function () {
+      const KEY = 'field_collector_data';
+      const currentState = () => {
+        const s = {};
+        s.reserve = $('#reserve').value;
+        s.date = $('#date').value;
+        s.observers = $('#observers').value;
+        s.temp = $('#temp').value;
+        s.sky = $('#sky').value;
+        s.precip = $('#precip').value;
+        s.start = $('#start').value;
+        s.end = $('#end').value;
+        s.activities = $('#activities').value;
+        s.trails = $('#trails').value;
+        s.anthropogenic = $('#anthropogenic').value;
+        s.plants = $('#plants').value;
+        s.animals = $('#animals').value;
+        s.fungi = $('#fungi').value;
+        s.gps = {
+          lat: parseFloat($('#lat').value) || null,
+          lon: parseFloat($('#lon').value) || null
+        };
+        return s;
+      };
+
+      function $(sel) { return document.querySelector(sel); }
+      function safeGet() {
+        try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; }
+      }
+      function safeSet(data) {
+        localStorage.setItem(KEY, JSON.stringify(data));
+        updateStorageInfo();
+      }
+      function pretty(obj) { return JSON.stringify(obj, null, 2); }
+      function bytesForString(str) { return new Blob([str]).size; }
+      function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+      }
+      function debounce(func, wait) {
+        let timeout;
+        return function (...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+      }
+
+      // Shared helpers for Import/Export
+      function downloadJSON(data, filenamePrefix) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filenamePrefix}_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function attachJSONLoader(btn, onLoaded) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            try {
+              const parsed = JSON.parse(evt.target.result);
+              onLoaded(parsed);
+            } catch (err) {
+              alert('Invalid JSON file');
+            }
+          };
+          reader.readAsText(file);
+          input.value = '';
+        });
+      }
+
+      const autoSave = debounce(() => safeSet(currentState()), 350);
+
+      function setStatus(msg, cls) {
+        const el = $('#saveState');
+        el.textContent = msg;
+        el.className = 'pill ' + (cls || '');
+      }
+
+      function updateStorageInfo() {
+        const raw = localStorage.getItem(KEY) || '';
+        const used = bytesForString(raw);
+        $('#storageInfo').textContent = formatBytes(used);
+      }
+
+      // ---------- Init form with defaults or saved ----------
+      (function init() {
+        const saved = safeGet();
+        if (saved) {
+          fillForm(saved);
+          $('#jsonPreview').textContent = pretty(saved);
+        } else {
+          const isoDate = new Date().toISOString().slice(0, 10);
+          $('#date').value = isoDate;
+          $('#jsonPreview').textContent = pretty(currentState());
+        }
+        updateStorageInfo();
+        setStatus('Ready', '');
+      })();
+
+      function fillForm(s) {
+        $('#reserve').value = s.reserve || '';
+        $('#date').value = s.date || '';
+        $('#observers').value = s.observers || '';
+        $('#temp').value = s.temp || '';
+        $('#sky').value = s.sky || '';
+        $('#precip').value = s.precip || '';
+        $('#start').value = s.start || '';
+        $('#end').value = s.end || '';
+        $('#activities').value = s.activities || '';
+        $('#trails').value = s.trails || '';
+        $('#anthropogenic').value = s.anthropogenic || '';
+        $('#plants').value = s.plants || '';
+        $('#animals').value = s.animals || '';
+        $('#fungi').value = s.fungi || '';
+        if (s.gps) {
+          $('#lat').value = (s.gps.lat || '').toString();
+          $('#lon').value = (s.gps.lon || '').toString();
+        }
+      }
+
+      // ---------- Autosave bindings ----------
+      const inputs = document.querySelectorAll('input, textarea, select');
+      inputs.forEach(el => {
+        el.addEventListener('input', () => { setStatus('Saving…', ''); autoSave(); });
+        el.addEventListener('change', () => { setStatus('Saving…', ''); autoSave(); });
+      });
+
+      // ---------- Controls ----------
+      $('#btnSaveNow').addEventListener('click', () => { safeSet(currentState()); });
+
+      $('#btnClear').addEventListener('click', () => {
+        if (confirm('Clear all locally saved data for this collector?')) {
+          localStorage.removeItem(KEY);
+          fillForm({}); // reset fields
+          const isoDate = new Date().toISOString().slice(0, 10);
+          $('#date').value = isoDate;
+          safeSet(currentState());
+          setStatus('Cleared', 'warn');
+        }
+      });
+
+      // Share Data Logic
+      async function shareData() {
+        const data = currentState();
+        const filename = `field_data_${new Date().toISOString().slice(0, 10)}.json`;
+        const file = new File([JSON.stringify(data, null, 2)], filename, { type: 'application/json' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'Field Data',
+              text: 'Here is the collected field data.',
+            });
+            setStatus('Shared successfully', 'ok');
+          } catch (err) {
+            if (err.name !== 'AbortError') {
+              console.error('Share failed:', err);
+              alert('Share failed. Downloading file instead.');
+              downloadJSON(data, 'field_collect');
+            }
+          }
+        } else {
+          // Fallback for browsers that don't support file sharing
+          downloadJSON(data, 'field_collect');
+          setStatus('Downloaded (Share not supported)', 'ok');
+        }
+      }
+
+      $('#btnShare').addEventListener('click', shareData);
+
+      // Use shared download helper
+      $('#btnExport').addEventListener('click', () => {
+        downloadJSON(currentState(), 'field_collect');
+        setStatus('Exported', 'ok');
+      });
+
+      // Use shared upload helper
+      attachJSONLoader($('#btnImport'), (parsed) => {
+        fillForm(parsed);
+        safeSet(currentState()); // normalize and save
+        setStatus('Imported', 'ok');
+      });
+
+      // ---------- GPS ----------
+      $('#btnGPS').addEventListener('click', () => {
+        const out = $('#gpsStatus');
+        if (!('geolocation' in navigator)) {
+          out.textContent = 'Geolocation not supported by this browser.';
+          return;
+        }
+        out.textContent = 'Requesting location…';
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            $('#lat').value = latitude.toFixed(6);
+            $('#lon').value = longitude.toFixed(6);
+            setStatus('Saving…', ''); autoSave();
+            out.textContent = `Got GPS at ${new Date().toLocaleTimeString()}`;
+          },
+          (err) => {
+            out.textContent = `GPS error: ${err.message}`;
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+
+      // ---------- Safety: write once on visibility change ----------
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+          safeSet(currentState());
+        }
+      });
+
+    })();
+  </script>
+</body>
+
+</html>

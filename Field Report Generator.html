@@ -1,0 +1,1218 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nature Reserve Visit Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Merriweather:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2c5f2d;
+      /* Deep forest green */
+      --primary-dark: #1a3c1b;
+      --accent: #ffbe00;
+      /* Golden yellow */
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --bg-body: #f3f4f6;
+      --bg-card: #ffffff;
+      --border: #e5e7eb;
+      --radius: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --font-sans: 'Inter', sans-serif;
+      --font-serif: 'Merriweather', serif;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background: var(--bg-body);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      padding-bottom: 40px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px;
+      border: 1px solid var(--border);
+    }
+
+    /* Header & Titles */
+    h1,
+    h2,
+    h3 {
+      font-family: var(--font-serif);
+      color: var(--primary-dark);
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.2;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.5rem;
+      display: inline-block;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(5px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .toolbar .grow {
+      flex: 1;
+    }
+
+    .toolbar strong {
+      font-family: var(--font-serif);
+      color: var(--primary-dark);
+      font-size: 1.1rem;
+    }
+
+    /* Inputs & Forms */
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      color: var(--text-main);
+      background: #f9fafb;
+      transition: all 0.2s;
+      box-sizing: border-box;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(44, 95, 45, 0.1);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    /* Buttons */
+    button {
+      background: white;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 999px;
+      /* Pill shape */
+      font-weight: 500;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+      line-height: 1.2;
+    }
+
+    button:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+    }
+
+    button.primary {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    button.primary:hover {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+
+    /* Grids */
+    .grid {
+      display: grid;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    /* Photo Dropzone */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      text-align: center;
+      background: #f9fafb;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-muted);
+    }
+
+    .dropzone:hover,
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background: #f0fdf4;
+      color: var(--primary);
+    }
+
+    .dropzone p {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    /* Photo Grid */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 20px;
+      margin-top: 24px;
+    }
+
+    .photo {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s;
+    }
+
+    .photo:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .photo img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      background: #f3f4f6;
+    }
+
+    .photo input.title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      border: none;
+      padding: 4px 0;
+      background: transparent;
+      border-bottom: 1px solid transparent;
+      border-radius: 0;
+    }
+
+    .photo input.title:focus {
+      border-bottom-color: var(--primary);
+      box-shadow: none;
+    }
+
+    .photo textarea.notes {
+      font-size: 0.85rem;
+      padding: 8px;
+      min-height: 60px;
+      margin-bottom: 8px;
+    }
+
+    .photo .gps {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-family: monospace;
+    }
+
+    .photo .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .photo .controls button {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+    }
+
+    .photo .controls button:hover {
+      background: #f3f4f6;
+      border-color: var(--border);
+    }
+
+    .photo .controls button.remove {
+      color: #ef4444;
+    }
+
+    .photo .controls button.remove:hover {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+
+    /* Print Styles */
+    @media print {
+      @page {
+        margin: 15mm;
+      }
+
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .container {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .card {
+        box-shadow: none;
+        border: none;
+        padding: 0;
+      }
+
+      .noprint,
+      .toolbar,
+      .dropzone,
+      .controls {
+        display: none !important;
+      }
+
+      input,
+      textarea,
+      select {
+        border: none;
+        background: transparent;
+        padding: 0;
+        resize: none;
+      }
+
+      h2 {
+        border-bottom: 1px solid #000;
+        margin-top: 20px;
+      }
+    }
+
+    /* Drag and Drop Styles */
+    .photo.dragging {
+      opacity: 0.4;
+      border: 2px dashed var(--primary);
+    }
+
+    .photo.drag-over {
+      border-top: 3px solid var(--accent);
+      transform: scale(1.02);
+    }
+
+    /* Status Pill */
+    .pill {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: #f9fafb;
+      font-weight: 500;
+      display: inline-block;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+</head>
+
+<body>
+  <!-- Sticky top controls -->
+  <div class="toolbar noprint">
+    <strong>Report Generator</strong>
+    <span class="pill" id="statusPill" style="display:none"></span>
+    <span class="grow"></span>
+    <label for="photoCols"
+      style="margin:0;font-weight:normal;font-size:0.85rem;display:flex;align-items:center;gap:8px">
+      Photos/row:
+      <select id="photoCols" style="width:auto;padding:4px 8px;font-size:0.85rem">
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </label>
+    <button id="btnSave">Save Data</button>
+    <button id="btnLoad">Load Data</button>
+    <button class="primary" id="btnReport">Generate Report</button>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <h1>Nature Reserve Visit Report</h1>
+
+      <div class="grid grid-2">
+        <div>
+          <label for="reserve">Reserve / Site</label>
+          <input id="reserve" type="text" value="Cawthra Mulock Nature Reserve" />
+        </div>
+        <div>
+          <label for="date">Visit Date</label>
+          <input id="date" type="date" value="2025-09-07" />
+        </div>
+        <div>
+          <label for="observers">Observers</label>
+          <input id="observers" type="text" value="Alan Wallace, Chris Brugman" />
+        </div>
+      </div>
+
+      <h2>Weather</h2>
+      <div class="grid grid-3">
+        <div>
+          <label for="temp">Temperature (°C)</label>
+          <input id="temp" type="text" value="15" />
+        </div>
+        <div>
+          <label for="sky">Sky Conditions</label>
+          <input id="sky" type="text" value="Mixed" />
+        </div>
+        <div>
+          <label for="precip">Precipitation</label>
+          <input id="precip" type="text" value="a few drops" />
+        </div>
+      </div>
+
+      <h2>Time on Task</h2>
+      <div class="grid grid-2">
+        <div>
+          <label for="start">Start Time</label>
+          <input id="start" type="time" value="09:25" />
+        </div>
+        <div>
+          <label for="end">End Time</label>
+          <input id="end" type="time" value="12:25" />
+        </div>
+      </div>
+
+      <h2>Activities</h2>
+      <textarea
+        id="activities">Dog walking (2 groups, 3 dogs) — informed walkers dogs are not allowed. 21 people on trails. 1 old bag of garbage at parking lot. Trails good overall. Split tree hazard on forest meadow trail (north portion, ~100m from start). Weathered post erosion near farm lane/forest meadow junction. Trail marker obscured by cedars. See photos. Plants, animals, fungi observed as listed below.</textarea>
+
+      <h2>State of Trails</h2>
+      <textarea id="trails" placeholder="Human impacts, disturbances, structures…"></textarea>
+
+      <h2>Anthropogenic</h2>
+      <textarea id="anthropogenic" placeholder="Human impacts, disturbances, structures…"></textarea>
+
+      <h2>Plants</h2>
+      <textarea
+        id="plants">Arrow-leaved aster, white baneberry, sensitive fern, burdocks, goldenrods (broad-leaved, flat-topped, New England), orange coneflower, black-eyed susan, chicory, wild bergamot, little bluestem, brown-eyed susans, common boneset, blue vervain, perennial sow-thistle, spotted joe pye weed, nodding beggarticks, red clover, purple coneflower, great mullein, creeping thistle, common jewelweed, common evening primrose, red raspberry, bittersweet nightshade, dames rocket, herb robert, shining aster, American lopseed, common yarrow, common selfheal, tall thimbleweed, wild basil, guelder rose, Scots pine, giant sunflower, alternate-leaved dogwood, birdsfoot trefoil, tall hairy agrimony, meadow rue, blue cohosh, great blue lobelia, calico aster, tall blue lettuce, wood nettle, American plantain, Canadian wild ginger, Canada yew, Solomon’s plume, bitternut hickory, Virginia creeper.</textarea>
+
+      <h2>Animals</h2>
+      <textarea id="animals">Insects: Milkweed tussock moth, North American tarnished plant bug, hickory tussock moth, Macremphytus tarsatus, dogwood eyespot gall midge, pale green assassin bug, white-banded crab spider.
+Birds: Pileated woodpecker, downy woodpecker, blue jays, chickadees, goldfinch, red-breasted nuthatch.
+Other: 2 turtles (likely painted).</textarea>
+
+      <h2>Fungi</h2>
+      <textarea
+        id="fungi">Crown-tipped coral fungus, turkey tail (old and new), Frost’s amanita, Pholiota granulosa, 8 giant puffballs, others photographed but not identified.</textarea>
+
+      <h2>Photos</h2>
+      <div id="dropzone" class="dropzone noprint">
+        <input id="fileInput" type="file" accept="image/*" multiple style="display:none" />
+        <p><strong>Drop images here</strong> or click to choose files</p>
+      </div>
+      <div id="photos" class="photo-grid" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <template id="photoT">
+    <div class="photo" draggable="true">
+      <a class="maplink" target="_blank"><img alt="Photo preview" /></a>
+      <input type="text" class="title" placeholder="Caption / Title (optional)" />
+      <textarea class="notes" placeholder="Notes (species, location, behaviour, etc.)"></textarea>
+      <div class="gps small"></div>
+      <div class="controls noprint">
+        <span class="small filename"></span>
+        <span class="right"></span>
+        <button class="up">↑</button>
+        <button class="down">↓</button>
+        <button class="remove">Remove</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="report-template">
+    <style>
+      body {
+        font-family: system-ui, Arial;
+        margin: 40px;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 8px;
+        break-after: avoid;
+        page-break-after: avoid;
+      }
+
+      .section {
+        margin-bottom: 20px;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        margin: 8px 0;
+        border-radius: 8px;
+      }
+
+      .photos {
+        display: grid;
+        gap: 12px;
+      }
+
+      .photo {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      .caption {
+        font-size: 14px;
+        margin-top: 4px;
+      }
+
+      ul.columns {
+        columns: 3;
+        column-gap: 1.4em;
+        padding-left: 1.2em;
+        margin: 0;
+      }
+
+      ul.columns li {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      /* Print Banner Styles */
+      .print-banner {
+        background: #f0f9ff;
+        border-bottom: 1px solid #bae6fd;
+        padding: 16px;
+        margin: -40px -40px 40px -40px;
+        /* Negative margin to stretch full width */
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: system-ui, sans-serif;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .print-banner h3 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        color: #0c4a6e;
+      }
+
+      .print-banner p {
+        margin: 0;
+        font-size: 14px;
+        color: #334155;
+      }
+
+      .print-btn {
+        background: #0284c7;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 15px;
+      }
+
+      .print-btn:hover {
+        background: #0369a1;
+      }
+
+      @media print {
+        ul.columns {
+          columns: 3;
+        }
+
+        .noprint {
+          display: none !important;
+        }
+
+        body {
+          margin: 0;
+        }
+
+        /* Reset margin for print */
+      }
+    </style>
+    <div class="report-body">
+      <div class="print-banner noprint">
+        <div>
+          <h3>How to Save as PDF</h3>
+          <p>1. Click the button &rarr; 2. Change <strong>Destination</strong> to "Save as PDF" &rarr; 3. Select
+            location to save file &rarr; 4. Click <strong>Save</strong></p>
+        </div>
+        <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+      </div>
+      <h1>Nature Reserve Visit Report</h1>
+      <div class="section">
+        <strong>Reserve:</strong> <span class="data-reserve"></span><br>
+        <strong>Date:</strong> <span class="data-date"></span><br>
+        <strong>Observers:</strong> <span class="data-observers"></span><br>
+        <strong>Temperature:</strong> <span class="data-temp"></span> °C<br>
+        <strong>Sky:</strong> <span class="data-sky"></span><br>
+        <strong>Precipitation:</strong> <span class="data-precip"></span><br>
+        <strong>Start:</strong> <span class="data-start"></span><br>
+        <strong>End:</strong> <span class="data-end"></span>
+      </div>
+      <div class="section">
+        <h2>Activities</h2>
+        <p class="data-activities"></p>
+      </div>
+      <div class="section">
+        <h2>Trails</h2>
+        <p class="data-trails"></p>
+      </div>
+      <div class="section">
+        <h2>Anthropogenic</h2>
+        <p class="data-anthropogenic"></p>
+      </div>
+      <div class="section">
+        <h2>Plants</h2>
+        <ul class="columns data-plants"></ul>
+      </div>
+      <div class="section">
+        <h2>Animals</h2>
+        <ul class="columns data-animals"></ul>
+      </div>
+      <div class="section">
+        <h2>Fungi</h2>
+        <ul class="columns data-fungi"></ul>
+      </div>
+      <div class="section">
+        <h2>Photos</h2>
+        <div class="photos"></div>
+      </div>
+
+      <!-- Map Section (Hidden by default, shown if GPS data exists and online) -->
+      <div id="map-section" class="section" style="break-before: page; display: none;">
+        <h2>Location Map</h2>
+        <div id="map"
+          style="height: 23cm; width: 100%; max-width: 18cm; margin: 0 auto; border-radius: 8px; border: 1px solid #ccc;">
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="report-photo-template">
+    <div class="photo">
+      <a class="photo-link" target="_blank" rel="noopener"><img class="photo-img" alt="Photo"></a>
+      <div class="caption">
+        <strong class="photo-title"></strong><br>
+        <span class="photo-notes"></span><br>
+        <div class="photo-gps" style="font-size:12px;color:#475569;margin-top:4px;"></div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const photosEl = $('#photos');
+    const fileInput = $('#fileInput');
+    const dropzone = $('#dropzone');
+    const statusPill = $('#statusPill');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+    ;['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+    ;['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+    dropzone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+
+    async function handleFiles(list) {
+      const files = [...list].filter(f => f.type.startsWith('image/'));
+      if (files.length === 0) return;
+
+      statusPill.style.display = 'inline-block';
+      let processed = 0;
+      const total = files.length;
+      statusPill.textContent = `Processing 1/${total}...`;
+
+      for (const f of files) {
+        processed++;
+        statusPill.textContent = `Processing ${processed}/${total}...`;
+
+        // Process sequentially to keep order (or use Promise.all if order doesn't strictly matter but we want speed)
+        // Sequential is safer for UI updates and order.
+        try {
+          const dataUrl = await resizeAndCompress(f, 1200, 0.8);
+          const gps = await extractGPS(f);
+          addPhoto({ name: f.name, dataUrl, gps });
+        } catch (err) {
+          console.error("Error processing file:", f.name, err);
+        }
+      }
+
+      statusPill.textContent = 'Done';
+      setTimeout(() => {
+        statusPill.style.display = 'none';
+      }, 2000);
+    }
+
+    function resizeAndCompress(file, maxSize, quality) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            if (w > h && w > maxSize) { h *= maxSize / w; w = maxSize; } else if (h >= w && h > maxSize) { w *= maxSize / h; h = maxSize; }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function extractGPS(file) {
+      return new Promise(resolve => {
+        EXIF.getData(file, function () {
+          const lat = EXIF.getTag(this, "GPSLatitude");
+          const latRef = EXIF.getTag(this, "GPSLatitudeRef");
+          const lon = EXIF.getTag(this, "GPSLongitude");
+          const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
+          if (lat && lon) {
+            const latDec = convertDMSToDD(lat, latRef);
+            const lonDec = convertDMSToDD(lon, lonRef);
+            resolve({ lat: latDec, lon: lonDec });
+          } else resolve(null);
+        });
+      });
+    }
+
+    function convertDMSToDD(dms, ref) {
+      let deg = dms[0].numerator / dms[0].denominator;
+      let min = dms[1].numerator / dms[1].denominator;
+      let sec = dms[2].numerator / dms[2].denominator;
+      let dd = deg + min / 60 + sec / 3600;
+      if (ref === "S" || ref === "W") dd *= -1;
+      return dd.toFixed(6);
+    }
+
+    // --- Drag and Drop Logic ---
+    let draggedItem = null;
+
+    function handleDragStart(e) {
+      draggedItem = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault(); // Necessary to allow dropping
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+
+    function handleDragEnter(e) {
+      if (this !== draggedItem) {
+        this.classList.add('drag-over');
+      }
+    }
+
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.stopPropagation(); // stops the browser from redirecting.
+      this.classList.remove('drag-over');
+
+      if (draggedItem !== this) {
+        // Check if we are dropping before or after
+        // Simple logic: just insert before the target
+        // For a grid, it might be better to check mouse position relative to center,
+        // but insertBefore is usually sufficient for reordering.
+
+        // If we want to be able to drop "after" the last item, we might need more logic,
+        // but since we can drop on any item, we can just swap or insert before.
+
+        // Let's try inserting before the drop target
+        // If the dragged item is after the drop target in the DOM, it moves up.
+        // If the dragged item is before the drop target, it moves down (effectively).
+
+        // To make it feel more natural in a grid:
+        // If dragging from left/top to right/bottom -> insert after
+        // If dragging from right/bottom to left/top -> insert before
+
+        const allPhotos = [...photosEl.querySelectorAll('.photo')];
+        const draggedIdx = allPhotos.indexOf(draggedItem);
+        const droppedIdx = allPhotos.indexOf(this);
+
+        if (draggedIdx < droppedIdx) {
+          this.after(draggedItem);
+        } else {
+          this.before(draggedItem);
+        }
+      }
+      return false;
+    }
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      [...photosEl.querySelectorAll('.photo')].forEach(item => item.classList.remove('drag-over'));
+      draggedItem = null;
+    }
+    // ---------------------------
+
+    function addPhoto({ name, dataUrl, title, notes, gps }) {
+      const node = $('#photoT').content.firstElementChild.cloneNode(true);
+      const img = node.querySelector('img');
+      const link = node.querySelector('.maplink');
+      img.src = dataUrl;
+      node.querySelector('.filename').textContent = name || '';
+      node.querySelector('.title').value = title || '';
+      node.querySelector('.notes').value = notes || '';
+      if (gps) {
+        node.querySelector('.gps').textContent = `GPS: ${gps.lat}, ${gps.lon}`;
+        link.href = `https://www.google.com/maps?q=${gps.lat},${gps.lon}`;
+      } else {
+        node.querySelector('.gps').textContent = '';
+        link.removeAttribute('href');
+      }
+      node.querySelector('.remove').addEventListener('click', () => node.remove());
+      node.querySelector('.up').addEventListener('click', () => node.previousElementSibling?.before(node));
+      node.querySelector('.down').addEventListener('click', () => node.nextElementSibling?.after(node));
+
+      // Drag events
+      node.addEventListener('dragstart', handleDragStart);
+      node.addEventListener('dragover', handleDragOver);
+      node.addEventListener('drop', handleDrop);
+      node.addEventListener('dragenter', handleDragEnter);
+      node.addEventListener('dragleave', handleDragLeave);
+      node.addEventListener('dragend', handleDragEnd);
+
+      photosEl.appendChild(node);
+    }
+
+    function collectState() {
+      return {
+        reserve: $('#reserve').value.trim(),
+        date: $('#date').value,
+        observers: $('#observers').value.trim(),
+        temp: $('#temp').value.trim(),
+        sky: $('#sky').value.trim(),
+        precip: $('#precip').value.trim(),
+        start: $('#start').value.trim(),
+        end: $('#end').value.trim(),
+        activities: $('#activities').value.trim(),
+        trails: $('#trails').value.trim(),
+        anthropogenic: $('#anthropogenic').value.trim(),  // ← new
+        plants: $('#plants').value.trim(),
+        animals: $('#animals').value.trim(),
+        fungi: $('#fungi').value.trim(),
+        photoCols: $('#photoCols').value,
+        photos: [...document.querySelectorAll('.photo')].map(p => ({
+          name: p.querySelector('.filename').textContent,
+          dataUrl: p.querySelector('img').src,
+          title: p.querySelector('.title').value,
+          notes: p.querySelector('.notes').value,
+          gps: p.querySelector('.gps').textContent.replace('GPS: ', '') || ''
+        }))
+      };
+    }
+
+    $('#btnReport').addEventListener('click', () => {
+      const state = collectState();
+
+      if (!state.reserve) {
+        alert("Please enter a Reserve / Site name before generating the report.");
+        $('#reserve').focus();
+        return;
+      }
+
+      const reportDoc = generateReportDoc(state);
+
+      const win = window.open('', '_blank');
+      win.document.open();
+      win.document.write('<!doctype html>');
+      win.document.write(reportDoc.documentElement.outerHTML);
+      win.document.close();
+    });
+
+    function generateReportDoc(s) {
+      const doc = document.implementation.createHTMLDocument('Report');
+      const template = document.getElementById('report-template').content.cloneNode(true);
+
+      // Extract style and body content
+      const style = template.querySelector('style');
+      const bodyContent = template.querySelector('.report-body');
+
+      if (style) {
+        doc.head.appendChild(style.cloneNode(true));
+      }
+
+      if (bodyContent) {
+        doc.body.innerHTML = bodyContent.innerHTML;
+      }
+
+      const setText = (sel, text) => {
+        const el = doc.querySelector(sel);
+        if (el) el.textContent = text || '';
+      };
+
+      const setList = (sel, text) => {
+        const el = doc.querySelector(sel);
+        if (!el) return;
+        el.innerHTML = '';
+        (text || '').split(/[,;\n]+/).map(x => x.trim()).filter(Boolean).forEach(item => {
+          const li = doc.createElement('li');
+          li.textContent = item;
+          el.appendChild(li);
+        });
+      };
+
+      setText('.data-reserve', s.reserve);
+      setText('.data-date', s.date);
+      setText('.data-observers', s.observers);
+      setText('.data-temp', s.temp);
+      setText('.data-sky', s.sky);
+      setText('.data-precip', s.precip);
+      setText('.data-start', s.start);
+      setText('.data-end', s.end);
+
+      // Set the document title, which browsers use as the default filename for "Save as PDF"
+      const safeReserve = (s.reserve || 'Reserve').replace(/[^a-z0-9\s-_]/gi, '').trim();
+      doc.title = `Visit Report - ${safeReserve} - ${s.date || 'NoDate'}`;
+
+      const setMultiLine = (sel, text) => {
+        const el = doc.querySelector(sel);
+        if (!el) return;
+        el.innerHTML = '';
+        (text || '').split('\n').forEach((line, i) => {
+          if (i > 0) el.appendChild(doc.createElement('br'));
+          el.appendChild(doc.createTextNode(line));
+        });
+      };
+
+      setMultiLine('.data-activities', s.activities);
+      setMultiLine('.data-trails', s.trails);
+      setMultiLine('.data-anthropogenic', s.anthropogenic);
+
+      setList('.data-plants', s.plants);
+      setList('.data-animals', s.animals);
+      setList('.data-fungi', s.fungi);
+
+      const photosContainer = doc.querySelector('.photos');
+      if (photosContainer) {
+        photosContainer.style.gridTemplateColumns = `repeat(${s.photoCols || 3}, 1fr)`;
+        const photoTemplate = document.getElementById('report-photo-template');
+
+        (s.photos || []).forEach(p => {
+          const pNode = photoTemplate.content.cloneNode(true);
+          const img = pNode.querySelector('img');
+          const link = pNode.querySelector('a');
+          const title = pNode.querySelector('.photo-title');
+          const notes = pNode.querySelector('.photo-notes');
+          const gpsDiv = pNode.querySelector('.photo-gps');
+
+          img.src = p.dataUrl;
+          img.alt = p.title || 'Photo';
+
+          if (p.title) {
+            title.textContent = p.title;
+          } else {
+            title.style.display = 'none';
+          }
+
+          if (p.notes) {
+            notes.textContent = p.notes;
+          } else {
+            notes.style.display = 'none';
+          }
+
+          const gpsRaw = (p.gps || '').trim();
+          if (gpsRaw && gpsRaw.includes(',')) {
+            const [lat, lon] = gpsRaw.split(',').map(v => v.trim());
+            link.href = `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lon)}`;
+            gpsDiv.textContent = `GPS: ${lat}, ${lon}`;
+          } else {
+            const parent = link.parentNode;
+            parent.replaceChild(img, link);
+            gpsDiv.style.display = 'none';
+          }
+
+          photosContainer.appendChild(pNode);
+        });
+      }
+
+      // --- Map Integration ---
+      // Collect valid GPS points
+      const gpsPoints = (s.photos || [])
+        .filter(p => p.gps && p.gps.includes(','))
+        .map(p => {
+          const [lat, lon] = p.gps.split(',').map(n => parseFloat(n.trim()));
+          return { lat, lon, title: p.title || p.name || 'Photo', url: p.dataUrl };
+        });
+
+      if (gpsPoints.length > 0) {
+        // Inject Leaflet CSS
+        const leafletCSS = doc.createElement('link');
+        leafletCSS.rel = 'stylesheet';
+        leafletCSS.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        doc.head.appendChild(leafletCSS);
+
+        // Inject Leaflet JS
+        const leafletJS = doc.createElement('script');
+        leafletJS.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        doc.head.appendChild(leafletJS);
+
+        // Inject Map Initialization Script
+        const mapScript = doc.createElement('script');
+        mapScript.textContent = `
+          window.addEventListener('load', function() {
+            // Check if Leaflet loaded successfully
+            if (typeof L === 'undefined') {
+              console.warn('Leaflet failed to load (offline?); map will remain hidden.');
+              return;
+            }
+            
+            const points = ${JSON.stringify(gpsPoints)};
+            if (points.length === 0) return;
+
+            // Show the map section
+            const mapSection = document.getElementById('map-section');
+            if (mapSection) mapSection.style.display = 'block';
+            
+            // Initialize Map
+            const map = L.map('map');
+            const bounds = L.latLngBounds();
+            
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            points.forEach(p => {
+                const icon = L.divIcon({
+                    className: 'map-photo-icon',
+                    html: '<img src="' + p.url + '" style="width: 48px; height: 48px; object-fit: cover; border-radius: 4px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4);">',
+                    iconSize: [52, 52],
+                    iconAnchor: [26, 26]
+                });
+                
+                L.marker([p.lat, p.lon], { icon: icon }).addTo(map)
+                    .bindPopup(p.title);
+                bounds.extend([p.lat, p.lon]);
+            });
+
+            map.fitBounds(bounds, { padding: [50, 50] });
+          });
+        `;
+        doc.body.appendChild(mapScript);
+      }
+
+      return doc;
+    }
+
+    // ---- JSON SAVE/LOAD HELPERS ----------------------------------------------
+
+    /** Safely stringify your app state into a portable JSON package. */
+    function downloadJSON(state) {
+      // Package with a tiny header for future-proofing
+      const payload = {
+        app: "NatureReservePhotoReport",
+        schemaVersion: 1,
+        savedAt: new Date().toISOString(),
+        data: state, // includes photos with dataUrl, titles, notes, gps, etc.
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json"
+      });
+
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `nature_report_${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }
+
+    /** Attach a loader to a file input; call onLoad with the parsed state. */
+    function attachJSONLoader(fileInputEl, onLoad) {
+      fileInputEl.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+          const text = await file.text();
+          const parsed = JSON.parse(text);
+
+          // Accept either {data: {...}} or a raw state object for flexibility.
+          const state = parsed && parsed.data ? parsed.data : parsed;
+
+          // Accept JSON with or without photos; default to empty array
+          if (!state) {
+            alert("Could not read that JSON file.");
+            return;
+          }
+          if (state.photos && !Array.isArray(state.photos)) {
+            alert("Photos must be an array if present.");
+            return;
+          }
+          state.photos = Array.isArray(state.photos) ? state.photos : [];
+          onLoad(state);
+
+
+          // Optional: normalize GPS formatting if needed
+          state.photos = state.photos.map(p => ({
+            ...p,
+            gps: (p.gps || "").trim() // keep "lat, lon" as established earlier
+          }));
+
+          onLoad(state);
+        } catch (err) {
+          console.error(err);
+          alert("Couldn't read that JSON file. Is it a valid saved report?");
+        } finally {
+          // Reset the input so the same file can be chosen again later
+          e.target.value = "";
+        }
+      });
+    }
+
+
+    // Wire up the Save button
+    $('#btnSave').addEventListener('click', () => {
+      const state = collectState();
+      downloadJSON(state);
+    });
+
+    // Wire up the Load button
+    // We need a hidden file input for the load button to trigger
+    const loadInput = document.createElement('input');
+    loadInput.type = 'file';
+    loadInput.accept = 'application/json';
+    loadInput.style.display = 'none';
+    document.body.appendChild(loadInput);
+
+    $('#btnLoad').addEventListener('click', () => loadInput.click());
+
+    attachJSONLoader(loadInput, (loadedState) => {
+      // Fill top fields
+      $('#reserve').value = loadedState.reserve || '';
+      $('#date').value = loadedState.date || '';
+      $('#observers').value = loadedState.observers || '';
+      $('#temp').value = loadedState.temp || '';
+      $('#sky').value = loadedState.sky || '';
+      $('#precip').value = loadedState.precip || '';
+      $('#start').value = loadedState.start || '';
+      $('#end').value = loadedState.end || '';
+      $('#activities').value = loadedState.activities || '';
+      $('#trails').value = loadedState.trails || '';
+      $('#anthropogenic').value = loadedState.anthropogenic || '';
+      $('#plants').value = loadedState.plants || '';
+      $('#animals').value = loadedState.animals || '';
+      $('#fungi').value = loadedState.fungi || '';
+      if (loadedState.photoCols) $('#photoCols').value = String(loadedState.photoCols);
+
+      // Rebuild photos grid
+      const photosEl = $('#photos');
+      photosEl.innerHTML = '';
+
+      (loadedState.photos || []).forEach(p => {
+        let gpsObj = null;
+        if (p.gps && typeof p.gps === 'string' && p.gps.includes(',')) {
+          const [latStr, lonStr] = p.gps.split(',').map(v => v.trim());
+          const lat = parseFloat(latStr);
+          const lon = parseFloat(lonStr);
+          if (!Number.isNaN(lat) && !Number.isNaN(lon)) gpsObj = { lat, lon };
+        } else if (p.gps && typeof p.gps === 'object' && 'lat' in p.gps && 'lon' in p.gps) {
+          gpsObj = { lat: p.gps.lat, lon: p.gps.lon };
+        }
+
+        addPhoto({
+          name: p.name || '',
+          dataUrl: p.dataUrl,
+          title: p.title || '',
+          notes: p.notes || '',
+          gps: gpsObj
+        });
+      });
+    });
+
+  </script>
+</body>
+
+</html>
