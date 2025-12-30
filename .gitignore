@@ -1,2 +1,14 @@
-*.json
+# Generated files
 *.pdf
+*.docx
+error_log.txt
+*.json
+~$*
+*excel*.py
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+tests/

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMNR Species Tracker</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.secondary {
+            background: #64748b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            text-align: left;
+            background: #f1f5f9;
+            padding: 10px;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .status-exact {
+            background: #dcfce7;
+            color: #166534;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .status-fuzzy {
+            background: #fef9c3;
+            color: #854d0e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .status-high {
+            background: #ccfbf1;
+            color: #0f766e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .status-new {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .status-new {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1>CMNR Species Tracker</h1>
+        <div><button class="secondary" onclick="document.getElementById('fileInput').click()">Import JSON
+                Report</button><input type="file" id="fileInput" accept=".json" style="display:none"
+                onchange="loadJson(this)"></div>
+    </div>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('verify')">Verify Species</div>
+        <div class="tab" onclick="switchTab('browse')">Browse Database</div>
+    </div>
+    <!-- VERIFY TAB -->
+    <div id="tab-verify">
+        <div class="card">
+            <p>Paste species lists below or import a JSON report to verify against the master database.</p>
+            <div class="grid">
+                <div><label>Plants</label><textarea id="plants" placeholder="e.g. Red Oak, Trillium"></textarea>
+                </div>
+                <div><label>Animals</label><textarea id="animals" placeholder="e.g. Blue Jay, Wolf"></textarea>
+                </div>
+                <div><label>Fungi</label><textarea id="fungi" placeholder="e.g. Turkey Tail"></textarea></div>
+            </div>
+            <div style="margin-top:20px; text-align:right;"><button onclick="verify()">Verify Species</button></div>
+        </div>
+        <div id="resultsArea" style="display:none;">
+            <div class="card">
+                <h2>Verification Results</h2>
+                <div id="resultsContent"></div>
+            </div>
+        </div>
+    </div>
+    <!-- BROWSE TAB -->
+    <div id="tab-browse" style="display:none;">
+        <div class="card">
+            <h2>Master Species Database</h2>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" class="search-box" id="dbSearch" placeholder="Search for a species..."
+                    oninput="filterDatabase()" style="margin-bottom:0; flex-grow:1;">
+                <select id="catFilter" class="search-box" style="width:auto; margin-bottom:0;"
+                    onchange="filterDatabase()">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+            <div style="max-height: 600px; overflow-y: auto;">
+                <table id="dbTable">
+                    <thead>
+                        <tr>
+                            <th>Common Name</th>
+                            <th>Scientific Name</th>
+                            <th>Category</th>
+                            <th>Sightings</th>
+                            <th>Individuals</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dbTableBody">
+                        <tr>
+                            <td colspan="3">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script>function $id(id) {
+            return document.getElementById(id);
+        }
+
+        function loadJson(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    // Support both wrapped {data: ...} and flat export format
+                    const data = (json.data) ? json.data : json;
+                    $id('plants').value = data.plants || '';
+                    $id('animals').value = data.animals || '';
+                    $id('fungi').value = data.fungi || '';
+                    verify();
+                }
+
+                catch (err) {
+                    alert("Error parsing JSON: " + err.message);
+                }
+            }
+
+                ;
+            reader.readAsText(file);
+            input.value = ''; // reset
+        }
+
+        async function verify() {
+            const data = {
+                plants: $id('plants').value,
+                animals: $id('animals').value,
+                fungi: $id('fungi').value
+            }
+
+                ;
+
+            const resultsArea = $id('resultsArea');
+            const content = $id('resultsContent');
+            resultsArea.style.display = 'block';
+            content.innerHTML = 'Analyzing...';
+
+            try {
+
+                // Assuming server is running on localhost:5000 (adjust if needed)
+                // The user is likely running this file from filesystem, so we need full URL
+                const res = await fetch('/api/verify-species', {
+
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+
+                    ,
+                    body: JSON.stringify({
+                        data: data
+                    })
+                });
+
+                if (!res.ok) throw new Error('Server Error');
+                const result = await res.json();
+                renderResults(result);
+
+            }
+
+            catch (e) {
+                content.innerHTML = `<p style="color:red">Error connecting to server. Is server.py running?</p>`;
+                console.error(e);
+            }
+        }
+
+        function renderResults(data) {
+            let html = '';
+
+            ['plants',
+                'animals',
+                'fungi'].forEach(cat => {
+                    const items = data[cat];
+                    if (!items || items.length === 0) return;
+
+                    // Sort: New -> Fuzzy (Low) -> Fuzzy (High) -> Exact, then Alphabetical
+                    items.sort((a, b) => {
+                        const getScore = (item) => {
+                            if (item.status === 'new') return 1;
+                            if (item.status === 'fuzzy') {
+                                return item.score >= 0.9 ? 3 : 2;
+                            }
+                            if (item.status === 'exact') return 4;
+                            return 5; // Should not happen
+                        };
+
+                        const sA = getScore(a);
+                        const sB = getScore(b);
+
+                        if (sA !== sB) return sA - sB;
+                        return a.original.localeCompare(b.original);
+                    });
+
+                    html += `<h3>${cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>`;
+                    html += `<table><thead><tr><th>Input</th><th>Status</th><th>Database Match</th></tr></thead><tbody>`;
+
+                    items.forEach(item => {
+                        let statusClass = 'status-new';
+                        let statusLabel = 'New';
+                        let matchInfo = 'No match found';
+
+                        if (item.status === 'exact') {
+                            statusClass = 'status-exact';
+                            statusLabel = 'Verified';
+
+                            matchInfo = `<b>${item.match}</b>`;
+                        }
+
+                        else if (item.status === 'fuzzy') {
+                            const score = item.score;
+
+                            if (score >= 0.9) {
+                                statusClass = 'status-high';
+                                statusLabel = `High Match (${Math.round(score * 100)}%)`;
+                            } else {
+                                statusClass = 'status-fuzzy';
+                                statusLabel = `Possible Match (${Math.round(score * 100)}%)`;
+                            }
+
+                            matchInfo = `Did you mean <b>${item.match}</b>?`;
+                        }
+
+                        html += `<tr> <td>${item.original}</td> <td><span class="${statusClass}" >${statusLabel}</span></td> <td>${matchInfo}</td> </tr>`;
+                    });
+                    html += `</tbody></table>`;
+                });
+
+            if (!html) html = '<p>No species found to verify.</p>';
+            $id('resultsContent').innerHTML = html;
+        }
+
+        // --- Browse Feature ---
+        let dbCache = [];
+        let dbLoaded = false;
+
+        function switchTab(tabName) {
+            // Update Headers
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            // This is a simple hack: assuming order verify=0, browse=1
+            if (tabName === 'verify') document.querySelectorAll('.tab')[0].classList.add('active');
+            if (tabName === 'browse') document.querySelectorAll('.tab')[1].classList.add('active');
+
+            // Toggle Content
+            $id('tab-verify').style.display = (tabName === 'verify') ? 'block' : 'none';
+            $id('tab-browse').style.display = (tabName === 'browse') ? 'block' : 'none';
+
+            if (tabName === 'browse' && !dbLoaded) {
+                loadDatabase();
+            }
+        }
+
+        async function loadDatabase() {
+            try {
+                const res = await fetch('/api/species');
+                if (!res.ok) {
+                    const errJson = await res.json().catch(() => ({}));
+                    throw new Error(errJson.error || "Failed to load database");
+                }
+                dbCache = await res.json();
+                dbLoaded = true;
+
+                // Populate Category Filter
+                const categories = [...new Set(dbCache.map(i => i.category || 'Uncategorized'))].sort();
+                const filter = $id('catFilter');
+                categories.forEach(cat => {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.innerText = cat;
+                    filter.appendChild(opt);
+                });
+
+                renderDatabase(dbCache);
+            }
+
+            catch (e) {
+                console.error(e);
+                $id('dbTableBody').innerHTML = `<tr><td colspan="3" style="color:red">Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        function renderDatabase(items) {
+            const tbody = $id('dbTableBody');
+
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3">No records found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = items.map(sp => ` <tr> <td><b>${sp.common_name}</b></td> <td>${sp.scientific_name || '-'}</td> <td>${sp.category || '-'}</td> <td>${sp.sightings_count}</td> <td>${sp.total_individuals}</td> </tr> `).join('');
+        }
+
+        function filterDatabase() {
+            const q = $id('dbSearch').value.toLowerCase();
+            const cat = $id('catFilter').value;
+
+            const filtered = dbCache.filter(sp => {
+                const matchesSearch = (sp.common_name && sp.common_name.toLowerCase().includes(q)) || (sp.scientific_name && sp.scientific_name.toLowerCase().includes(q));
+                const matchesCat = cat === "" || (sp.category || 'Uncategorized') === cat;
+                return matchesSearch && matchesCat;
+            });
+            renderDatabase(filtered);
+        }
+
+    </script>
+</body>
+
+</html>

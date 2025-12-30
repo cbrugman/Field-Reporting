@@ -1,0 +1,271 @@
+<!doctype html>
+<html>
+
+<head>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 2cm 1.27cm;
+
+            @bottom-center {
+                content: counter(page) " of " counter(pages);
+                font-family: "Helvetica", "Arial", sans-serif;
+                font-size: 10px;
+                color: #999;
+            }
+        }
+
+        /* First Page specific header in Margin */
+        @page :first {
+            @top-right {
+                content: element(headerInstruction);
+                vertical-align: top;
+            }
+        }
+
+        /* Instruction header style */
+        .header-instruction {
+            position: running(headerInstruction);
+            text-align: right;
+            font-family: "Helvetica", "Arial", sans-serif;
+            font-size: 10px;
+            color: #666;
+            margin-top: 15px;
+            /* Add space from top edge */
+        }
+
+        body {
+            font-family: "Helvetica", "Arial", sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #2c5f2d;
+            border-bottom: 2px solid #ffbe00;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #1a3c1b;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            page-break-after: avoid;
+            -pdf-keep-with-next: true;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        /* Tighter spacing for top metadata */
+        .meta-info p {
+            margin: 0 0 2px 0;
+            line-height: 1.3;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        p {
+            margin: 0 0 10px 0;
+            orphans: 3;
+            widows: 3;
+        }
+
+        /* Clean 3-column layout for WeasyPrint */
+        .list-columns {
+            column-count: 3;
+            column-gap: 20px;
+            width: 100%;
+        }
+
+        .list-columns ul {
+            margin: 0;
+            padding-left: 1.2em;
+        }
+
+        /* Compact list items */
+        .list-columns li {
+            margin-bottom: 1px;
+            line-height: 1.15;
+            break-inside: avoid;
+        }
+
+        /* Photo Grid */
+        table.photos {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            table-layout: fixed;
+        }
+
+        table.photos td {
+            vertical-align: top;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .photo-img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            display: block;
+        }
+
+        .caption {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #333;
+        }
+
+        .gps {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header-instruction">
+        Please send the completed report to Rick Berry, <a href="mailto:rberry515@gmail.com"
+            style="color: inherit; text-decoration: none;">rberry515@gmail.com</a>
+    </div>
+
+    <h1>Nature Reserve Visit Report</h1>
+
+    <div class="section meta-info">
+        <p><span class="label">Reserve:</span> {{ reserve }}</p>
+        <p><span class="label">Date:</span> {{ date }}</p>
+        <p><span class="label">Observers:</span> {{ observers }}</p>
+        <p><span class="label">Temperature:</span> {{ temp }} °C</p>
+        <p><span class="label">Sky:</span> {{ sky }}</p>
+        <p><span class="label">Precipitation:</span> {{ precip }}</p>
+        <p><span class="label">Start Time:</span> {{ start }}</p>
+        <p><span class="label">End Time:</span> {{ end }}</p>
+    </div>
+
+    {# Activities #}
+    {% if activities %}
+    <h2>Activities</h2>
+    {% for line in activities.split('\n') %}
+    <p>{{ line }}</p>
+    {% endfor %}
+    {% endif %}
+
+    {# Trails #}
+    {% if trails %}
+    <h2>Trails</h2>
+    {% for line in trails.split('\n') %}
+    <p>{{ line }}</p>
+    {% endfor %}
+    {% endif %}
+
+    {# Anthropogenic #}
+    {% if anthropogenic %}
+    <h2>Anthropogenic</h2>
+    {% for line in anthropogenic.split('\n') %}
+    <p>{{ line }}</p>
+    {% endfor %}
+    {% endif %}
+
+    {# Plants #}
+    {% if plants_data.entries %}
+    <h2>Plants (Species: {{ plants_data.species_count }}, Individuals: {{ plants_data.individual_count }})</h2>
+    <div class="list-columns">
+        <ul>
+            {% for item in plants_data.entries %}
+            <li>{{ item.name }} ({{ item.count }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# Animals #}
+    {% if animals_data.entries %}
+    <h2>Animals (Species: {{ animals_data.species_count }}, Individuals: {{ animals_data.individual_count }})</h2>
+    <div class="list-columns">
+        <ul>
+            {% for item in animals_data.entries %}
+            <li>{{ item.name }} ({{ item.count }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# Fungi #}
+    {% if fungi_data.entries %}
+    <h2>Fungi (Species: {{ fungi_data.species_count }}, Individuals: {{ fungi_data.individual_count }})</h2>
+    <div class="list-columns">
+        <ul>
+            {% for item in fungi_data.entries %}
+            <li>{{ item.name }} ({{ item.count }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {# Photos #}
+    <h2>Photos</h2>
+    {% if photos %}
+    <table class="photos">
+        {# Loop through photos in chunks of photoCols #}
+        {% for row in photos|batch(photoCols|default(3)|int) %}
+        <tr>
+            {% for p in row %}
+            <td>
+                {% if p.gps %}
+                <a href="https://www.google.com/maps?q={{ p.gps }}" target="_blank"
+                    style="text-decoration: none; color: inherit;">
+                    <img src="{{ p.dataUrl }}" class="photo-img">
+                </a>
+                {% else %}
+                <img src="{{ p.dataUrl }}" class="photo-img">
+                {% endif %}
+
+                <div class="caption">
+                    {% if p.title %}
+                    <strong>{{ p.title }}</strong><br>
+                    {% endif %}
+
+                    {% if p.notes %}
+                    {{ p.notes }}<br>
+                    {% endif %}
+
+                    {% if p.gps %}
+                    <div class="gps">GPS: <a href="https://www.google.com/maps?q={{ p.gps }}" target="_blank"
+                            style="color: #666; text-decoration: none;">{{ p.gps }}</a></div>
+                    {% endif %}
+                </div>
+            </td>
+            {% endfor %}
+
+            {# Fill empty cells if needed #}
+            {% if row|length < photoCols|default(3)|int %} {% for i in range(photoCols|default(3)|int - row|length) %}
+                <td>&nbsp;</td>
+                {% endfor %}
+                {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {# Map #}
+    {% if map_image %}
+    <h2 style="page-break-before: always;">Location Map</h2>
+    <img src="{{ map_image }}" style="width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px;">
+    {% endif %}
+
+</body>
+
+</html>

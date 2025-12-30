@@ -260,6 +260,158 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size: 0.85rem;
     }
+
+    /* Species Manager Styles */
+    .species-manager {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-top: 4px;
+    }
+
+    .species-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+
+    .species-input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .species-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 0 0 6px 6px;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      max-height: 400px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .species-results div.selected {
+      background-color: #f0fdf4;
+      color: var(--primary-dark);
+    }
+
+    .species-results div:hover {
+      background-color: #f0fdf4;
+      color: var(--primary-dark);
+    }
+
+    .species-results div {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .species-results div:hover {
+      background-color: #f0fdf4;
+      color: var(--primary-dark);
+    }
+
+    .species-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .species-item {
+      display: flex;
+      align-items: center;
+      background: white;
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 6px;
+      justify-content: space-between;
+    }
+
+    .species-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .count-badge {
+      background: var(--primary);
+      color: white;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .species-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      line-height: 1;
+      background: #f3f4f6;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      touch-action: manipulation;
+      /* Improves touch response */
+    }
+
+    .btn-remove {
+      color: #b91c1c;
+      background: #fef2f2;
+      border-color: #fecaca;
+      margin-left: 8px;
+    }
+
+    /* Feedback Animations */
+    @keyframes flash-yellow {
+      0% {
+        background-color: #fffbeb;
+        transform: scale(1.02);
+      }
+
+      50% {
+        background-color: #fef3c7;
+      }
+
+      100% {
+        background-color: white;
+        transform: scale(1);
+      }
+    }
+
+    .flash {
+      animation: flash-yellow 1.5s ease-out;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 0.9rem;
+      background: white;
+      border-radius: 6px;
+      border: 1px dashed var(--border);
+    }
   </style>
 </head>
 
@@ -489,6 +641,9 @@
           $('#lat').value = (s.gps.lat || '').toString();
           $('#lon').value = (s.gps.lon || '').toString();
         }
+
+        // Trigger change events so smart lists update
+        ['#plants', '#animals', '#fungi'].forEach(sel => $(sel).dispatchEvent(new Event('change')));
       }
 
       // ---------- Autosave bindings ----------
@@ -545,15 +700,18 @@
       // Use shared download helper
       $('#btnExport').addEventListener('click', () => {
         downloadJSON(currentState(), 'field_collect');
-        setStatus('Exported', 'ok');
       });
 
-      // Use shared upload helper
-      attachJSONLoader($('#btnImport'), (parsed) => {
-        fillForm(parsed);
-        safeSet(currentState()); // normalize and save
+      // Wire up Import
+      attachJSONLoader($('#btnImport'), (loadedData) => {
+        // Support both flat and wrapped formats
+        const state = loadedData.data || loadedData;
+        fillForm(state);
+        safeSet(currentState()); // save to localStorage immediately
         setStatus('Imported', 'ok');
       });
+
+
 
       // ---------- GPS ----------
       $('#btnGPS').addEventListener('click', () => {
@@ -584,6 +742,326 @@
           safeSet(currentState());
         }
       });
+
+      // ---------- Smart Species Manager ----------
+      function enableSmartSpeciesList(textareaId, taxonId) {
+        const textarea = $('#' + textareaId);
+        if (!textarea) return;
+
+        textarea.style.display = 'none'; // Hide original
+
+        // Container
+        const container = document.createElement('div');
+        container.className = 'species-manager';
+        textarea.after(container);
+
+        // State
+        let items = parseList(textarea.value);
+
+        // Listen for external updates (e.g. Import)
+        textarea.addEventListener('change', () => {
+          items = parseList(textarea.value);
+          render();
+        });
+
+        // Render Shell
+        container.innerHTML = `
+            <div class="species-form">
+                <div class="species-input-wrapper">
+                    <input type="text" class="new-species-input" placeholder="e.g. 15 Blue Jays" autocomplete="off">
+                    <div class="species-results"></div>
+                </div>
+                <button type="button" class="btn-add secondary">Add</button>
+            </div>
+            <div class="species-list"></div>
+          `;
+
+        const input = container.querySelector('.new-species-input');
+        const results = container.querySelector('.species-results');
+        const addBtn = container.querySelector('.btn-add');
+        const listContainer = container.querySelector('.species-list');
+
+        function render(highlightIndex = -1) {
+          listContainer.innerHTML = '';
+
+          if (items.length === 0) {
+            listContainer.innerHTML = '<div class="empty-state">No species recorded yet</div>';
+          } else {
+            items.forEach((item, index) => {
+              const div = document.createElement('div');
+              div.className = 'species-item';
+              if (index === highlightIndex) div.classList.add('flash');
+
+              div.innerHTML = `
+                      <div class="species-info">
+                          <span class="count-badge">${item.count}</span>
+                          <span>${item.name}</span>
+                      </div>
+                      <div class="species-controls">
+                          <button type="button" class="btn-icon dec" data-idx="${index}">−</button>
+                          <button type="button" class="btn-icon inc" data-idx="${index}">+</button>
+                          <button type="button" class="btn-icon btn-remove" data-idx="${index}">×</button>
+                      </div>
+                    `;
+              listContainer.appendChild(div);
+            });
+          }
+
+          // Sync to textarea
+          // Format as "Name Count" (no brackets) per user request
+          const textValue = items.map(i => {
+            // If count is 1, maybe just show name? 
+            // User asked for "Mute Swan 2", implying count is explicit.
+            // Let's keep it explicit: "Wolf 1", "Wolf 2".
+            return `${i.name} ${i.count}`;
+          }).join('\n');
+          textarea.value = textValue;
+
+          // Trigger autosave if needed (simulate input event)
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        // Events
+        container.addEventListener('click', (e) => {
+          // Handle clicks on the icon or the button itself (since we added nested layout)
+          const target = e.target.closest('button');
+          if (!target) return;
+
+          if (target.matches('.inc')) {
+            items[target.dataset.idx].count++;
+            render(parseInt(target.dataset.idx)); // mild flash on update
+          } else if (target.matches('.dec')) {
+            const idx = target.dataset.idx;
+            if (items[idx].count > 1) {
+              items[idx].count--;
+              render(parseInt(idx));
+            } else {
+              if (confirm('Remove this item?')) {
+                items.splice(idx, 1);
+                render();
+              }
+            }
+          } else if (target.matches('.btn-remove')) {
+            items.splice(target.dataset.idx, 1);
+            render();
+          }
+        });
+
+        function addItem(raw) {
+          if (!raw.trim()) return;
+
+          // Parse "15 Name" vs "Name" vs "Name 15"
+          let count = 1;
+          let name = raw.trim();
+
+          // Regex to look for leading number
+          const matchLeading = name.match(/^(\d+)\s+(.*)/);
+          if (matchLeading) {
+            count = parseInt(matchLeading[1]);
+            name = matchLeading[2];
+          } else {
+            // Regex for trailing number
+            const matchTrailing = name.match(/(.*)\s+(\d+)$/);
+            if (matchTrailing) {
+              name = matchTrailing[1];
+              count = parseInt(matchTrailing[2]);
+            }
+          }
+
+
+          // Check existing
+          let idx = items.findIndex(i => i.name.toLowerCase() === name.toLowerCase());
+          if (idx >= 0) {
+            items[idx].count += count;
+          } else {
+            items.push({ name, count });
+            idx = items.length - 1;
+          }
+
+          render(idx); // Flash the new or updated item
+          input.value = '';
+          results.style.display = 'none';
+        }
+
+        addBtn.addEventListener('click', () => addItem(input.value));
+        // Auto-Complete (iNaturalist)
+        let dbTimer;
+        let currentSelectionIndex = -1;
+
+        function updateSelection() {
+          const divs = results.querySelectorAll('div');
+          divs.forEach((div, idx) => {
+            if (idx === currentSelectionIndex) {
+              div.classList.add('selected');
+              div.scrollIntoView({ block: 'nearest' });
+            }
+            else div.classList.remove('selected');
+          });
+        }
+
+        function selectItem(index) {
+          const divs = results.querySelectorAll('div');
+          if (index >= 0 && index < divs.length) {
+            divs[index].click();
+          } else {
+            // No selection, add raw text
+            addItem(input.value);
+            results.style.display = 'none';
+          }
+        }
+
+        input.addEventListener('keydown', (e) => {
+          const divs = results.querySelectorAll('div');
+          if (results.style.display !== 'none' && divs.length > 0) {
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              currentSelectionIndex++;
+              if (currentSelectionIndex >= divs.length) currentSelectionIndex = 0;
+              updateSelection();
+              return;
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              currentSelectionIndex--;
+              if (currentSelectionIndex < 0) currentSelectionIndex = divs.length - 1;
+              updateSelection();
+              return;
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              selectItem(currentSelectionIndex);
+              return;
+            }
+          }
+
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            addItem(input.value);
+            results.style.display = 'none';
+          }
+        });
+
+        input.addEventListener('input', () => {
+          clearTimeout(dbTimer);
+          currentSelectionIndex = -1; // Reset selection
+          const q = input.value.trim();
+
+          // Don't search if short or just numbers
+          if (q.length < 3 || /^\d+$/.test(q)) {
+            results.style.display = 'none';
+            return;
+          }
+
+          dbTimer = setTimeout(async () => {
+            // Abort if input was cleared (e.g. item added)
+            if (!input.value.trim()) return;
+
+            try {
+              // Clean query of numbers for search: "15 wolf" -> "wolf"
+              let query = q;
+              let match = q.match(/^\d+\s+(.*)/);
+              if (match) query = match[1];
+              match = q.match(/(.*)\s+\d+$/); // check trailing number too
+              if (match) query = match[1];
+
+              if (query.length < 2) return;
+
+              // iNaturalist API
+              // Filter by Taxon (Kingdom) if provided, and Place (Canada=6712 default)
+              let url = `https://api.inaturalist.org/v1/taxa/autocomplete?q=${encodeURIComponent(query)}&per_page=10&place_id=6712`;
+              if (taxonId) url += `&taxon_id=${taxonId}`;
+
+              const res = await fetch(url);
+              if (!res.ok) throw new Error('API Error');
+              const data = await res.json();
+              const suggestions = data.results || [];
+
+              if (suggestions.length === 0) {
+                results.style.display = 'none';
+                return;
+              }
+
+              results.innerHTML = '';
+              suggestions.forEach((s, idx) => {
+                const d = document.createElement('div');
+                // Prefers common name, fallback to scientific
+                const common = s.preferred_common_name;
+                const scientific = s.name;
+                const label = common ? `${common} (${scientific})` : scientific;
+
+                d.textContent = label;
+                d.addEventListener('click', () => {
+                  // Preserve user's number if they typed one
+                  // Leading number case
+                  const leadingMatch = input.value.match(/^(\d+\s+)/);
+                  let prefix = '';
+                  let suffix = '';
+
+                  if (leadingMatch) {
+                    prefix = leadingMatch[1];
+                  } else {
+                    // Trailing number case
+                    const trailingMatch = input.value.match(/(\s+\d+)$/);
+                    if (trailingMatch) suffix = trailingMatch[1];
+                  }
+
+                  input.value = prefix + (common || scientific) + suffix;
+                  results.style.display = 'none';
+                  input.focus();
+                });
+
+                // Mouse over also updates selection state
+                d.addEventListener('mouseenter', () => {
+                  currentSelectionIndex = idx;
+                  updateSelection();
+                });
+
+                results.appendChild(d);
+              });
+              results.style.display = 'block';
+            } catch (err) {
+              console.warn('Autocomplete failed', err);
+            }
+          }, 300);
+        });
+
+        // Close dropdown on click outside
+        document.addEventListener('click', (e) => {
+          if (!container.contains(e.target)) results.style.display = 'none';
+        });
+
+        // Parse existing value (Name Count -> Object)
+        function parseList(str) {
+          if (!str) return [];
+          return str.split('\n').map(line => {
+            line = line.trim();
+            if (!line) return null;
+
+            // 1. Try "Name (Count)" (Legacy)
+            let m = line.match(/(.*)\s\((\d+)\)$/);
+            if (m) return { name: m[1].trim(), count: parseInt(m[2]) };
+
+            // 2. Try "Name Count" (New Standard)
+            m = line.match(/(.*)\s(\d+)$/);
+            if (m) return { name: m[1].trim(), count: parseInt(m[2]) };
+
+            // 3. Try "Count Name" (Leading Number)
+            m = line.match(/^(\d+)\s+(.*)$/);
+            if (m) return { name: m[2].trim(), count: parseInt(m[1]) };
+
+            // 4. Fallback to just Name (Count 1)
+            return { name: line, count: 1 };
+          }).filter(Boolean);
+        }
+
+        render(); // Init
+      }
+
+      // Initialize managers
+      // 47126 = Plants (Plantae)
+      // 1 = Animals (Animalia)
+      // 47170 = Fungi
+      enableSmartSpeciesList('plants', 47126);
+      enableSmartSpeciesList('animals', 1);
+      enableSmartSpeciesList('fungi', 47170);
 
     })();
   </script>

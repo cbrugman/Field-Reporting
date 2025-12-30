@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.git
+.gitignore
+.venv
+venv
+tests/
+*.pdf
+*.docx
+error_log.txt
+*.json
+*.excel.py
+*.db

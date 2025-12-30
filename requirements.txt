@@ -1,0 +1,7 @@
+flask
+weasyprint
+flask-cors
+staticmap
+python-docx
+
+gunicorn

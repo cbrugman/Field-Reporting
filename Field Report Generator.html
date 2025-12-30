@@ -175,6 +175,17 @@
       border-color: var(--primary-dark);
     }
 
+    button.word {
+      background: #2b579a;
+      color: white;
+      border-color: #2b579a;
+    }
+
+    button.word:hover {
+      background: #1e3f72;
+      border-color: #1e3f72;
+    }
+
     /* Grids */
     .grid {
       display: grid;
@@ -395,7 +406,8 @@
     </label>
     <button id="btnSave">Save Data</button>
     <button id="btnLoad">Load Data</button>
-    <button class="primary" id="btnReport">Generate Report</button>
+    <button id="btnWord" class="word">Save as Word</button>
+    <button class="primary" id="btnReport">Save as PDF</button>
   </div>
 
   <div class="container">
@@ -405,15 +417,15 @@
       <div class="grid grid-2">
         <div>
           <label for="reserve">Reserve / Site</label>
-          <input id="reserve" type="text" value="Cawthra Mulock Nature Reserve" />
+          <input id="reserve" type="text" placeholder="e.g., Cawthra Mulock Nature Reserve" />
         </div>
         <div>
           <label for="date">Visit Date</label>
-          <input id="date" type="date" value="2025-09-07" />
+          <input id="date" type="date" />
         </div>
         <div>
           <label for="observers">Observers</label>
-          <input id="observers" type="text" value="Alan Wallace, Chris Brugman" />
+          <input id="observers" type="text" placeholder="e.g., Name 1, Name 2" />
         </div>
       </div>
 
@@ -421,15 +433,15 @@
       <div class="grid grid-3">
         <div>
           <label for="temp">Temperature (°C)</label>
-          <input id="temp" type="text" value="15" />
+          <input id="temp" type="text" placeholder="e.g., 20" />
         </div>
         <div>
           <label for="sky">Sky Conditions</label>
-          <input id="sky" type="text" value="Mixed" />
+          <input id="sky" type="text" placeholder="e.g., Sunny, Overcast" />
         </div>
         <div>
           <label for="precip">Precipitation</label>
-          <input id="precip" type="text" value="a few drops" />
+          <input id="precip" type="text" placeholder="e.g., None, Light Rain" />
         </div>
       </div>
 
@@ -437,36 +449,35 @@
       <div class="grid grid-2">
         <div>
           <label for="start">Start Time</label>
-          <input id="start" type="time" value="09:25" />
+          <input id="start" type="time" />
         </div>
         <div>
           <label for="end">End Time</label>
-          <input id="end" type="time" value="12:25" />
+          <input id="end" type="time" />
         </div>
       </div>
 
       <h2>Activities</h2>
-      <textarea
-        id="activities">Dog walking (2 groups, 3 dogs) — informed walkers dogs are not allowed. 21 people on trails. 1 old bag of garbage at parking lot. Trails good overall. Split tree hazard on forest meadow trail (north portion, ~100m from start). Weathered post erosion near farm lane/forest meadow junction. Trail marker obscured by cedars. See photos. Plants, animals, fungi observed as listed below.</textarea>
+      <textarea id="activities"
+        placeholder="Describe the activities undertaken, hazards found, and general observations..."></textarea>
 
       <h2>State of Trails</h2>
-      <textarea id="trails" placeholder="Human impacts, disturbances, structures…"></textarea>
+      <textarea id="trails"
+        placeholder="Describe trail conditions (e.g., overgrown, clear, potential hazards like fallen trees)..."></textarea>
 
       <h2>Anthropogenic</h2>
       <textarea id="anthropogenic" placeholder="Human impacts, disturbances, structures…"></textarea>
 
       <h2>Plants</h2>
-      <textarea
-        id="plants">Arrow-leaved aster, white baneberry, sensitive fern, burdocks, goldenrods (broad-leaved, flat-topped, New England), orange coneflower, black-eyed susan, chicory, wild bergamot, little bluestem, brown-eyed susans, common boneset, blue vervain, perennial sow-thistle, spotted joe pye weed, nodding beggarticks, red clover, purple coneflower, great mullein, creeping thistle, common jewelweed, common evening primrose, red raspberry, bittersweet nightshade, dames rocket, herb robert, shining aster, American lopseed, common yarrow, common selfheal, tall thimbleweed, wild basil, guelder rose, Scots pine, giant sunflower, alternate-leaved dogwood, birdsfoot trefoil, tall hairy agrimony, meadow rue, blue cohosh, great blue lobelia, calico aster, tall blue lettuce, wood nettle, American plantain, Canadian wild ginger, Canada yew, Solomon’s plume, bitternut hickory, Virginia creeper.</textarea>
+      <textarea id="plants"
+        placeholder="List plant species observed. Separate entries with commas or new lines."></textarea>
 
       <h2>Animals</h2>
-      <textarea id="animals">Insects: Milkweed tussock moth, North American tarnished plant bug, hickory tussock moth, Macremphytus tarsatus, dogwood eyespot gall midge, pale green assassin bug, white-banded crab spider.
-Birds: Pileated woodpecker, downy woodpecker, blue jays, chickadees, goldfinch, red-breasted nuthatch.
-Other: 2 turtles (likely painted).</textarea>
+      <textarea id="animals"
+        placeholder="List animal species observed. Separate entries with commas or new lines."></textarea>
 
       <h2>Fungi</h2>
-      <textarea
-        id="fungi">Crown-tipped coral fungus, turkey tail (old and new), Frost’s amanita, Pholiota granulosa, 8 giant puffballs, others photographed but not identified.</textarea>
+      <textarea id="fungi" placeholder="List fungi observed. Separate entries with commas or new lines."></textarea>
 
       <h2>Photos</h2>
       <div id="dropzone" class="dropzone noprint">
@@ -488,6 +499,7 @@ Other: 2 turtles (likely painted).</textarea>
         <span class="right"></span>
         <button class="up">↑</button>
         <button class="down">↓</button>
+        <button class="rotate" type="button" title="Rotate 90°">↻</button>
         <button class="remove">Remove</button>
       </div>
     </div>
@@ -496,19 +508,36 @@ Other: 2 turtles (likely painted).</textarea>
   <template id="report-template">
     <style>
       body {
-        font-family: system-ui, Arial;
+        font-family: "Helvetica", "Arial", sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #333;
         margin: 40px;
       }
 
-      h1,
+      h1 {
+        font-size: 24px;
+        color: #2c5f2d;
+        /* Deep forest green to match UI */
+        border-bottom: 2px solid #ffbe00;
+        /* Accent color */
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+      }
+
       h2 {
-        margin: 0 0 8px;
+        font-size: 18px;
+        color: #1a3c1b;
+        margin-top: 25px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 5px;
         break-after: avoid;
         page-break-after: avoid;
       }
 
       .section {
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         break-inside: avoid;
         page-break-inside: avoid;
       }
@@ -517,34 +546,40 @@ Other: 2 turtles (likely painted).</textarea>
         max-width: 100%;
         height: auto;
         margin: 8px 0;
-        border-radius: 8px;
+        border-radius: 4px;
+        /* Slightly softer corners */
       }
 
       .photos {
         display: grid;
-        gap: 12px;
+        gap: 15px;
       }
 
       .photo {
         break-inside: avoid;
         page-break-inside: avoid;
+        background: transparent;
+        padding: 0;
+        border: none;
       }
 
       .caption {
-        font-size: 14px;
-        margin-top: 4px;
+        font-size: 12px;
+        /* Keep captions slightly smaller */
+        margin-top: 6px;
+        line-height: 1.3;
       }
 
       ul.columns {
-        columns: 3;
-        column-gap: 1.4em;
-        padding-left: 1.2em;
+        /* Columns are now handled by JS table creation for better PDF support */
+        padding-left: 0;
         margin: 0;
       }
 
       ul.columns li {
         break-inside: avoid;
         page-break-inside: avoid;
+        margin-bottom: 4px;
       }
 
       /* Print Banner Styles */
@@ -607,14 +642,7 @@ Other: 2 turtles (likely painted).</textarea>
       }
     </style>
     <div class="report-body">
-      <div class="print-banner noprint">
-        <div>
-          <h3>How to Save as PDF</h3>
-          <p>1. Click the button &rarr; 2. Change <strong>Destination</strong> to "Save as PDF" &rarr; 3. Select
-            location to save file &rarr; 4. Click <strong>Save</strong></p>
-        </div>
-        <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
-      </div>
+
       <h1>Nature Reserve Visit Report</h1>
       <div class="section">
         <strong>Reserve:</strong> <span class="data-reserve"></span><br>
@@ -852,6 +880,31 @@ Other: 2 turtles (likely painted).</textarea>
       node.querySelector('.up').addEventListener('click', () => node.previousElementSibling?.before(node));
       node.querySelector('.down').addEventListener('click', () => node.nextElementSibling?.after(node));
 
+      // Rotation logic
+      const rotateBtn = node.querySelector('.rotate');
+      if (rotateBtn) {
+        rotateBtn.addEventListener('click', () => {
+          const currentSrc = img.src;
+          const image = new Image();
+          image.onload = () => {
+            const canvas = document.createElement('canvas');
+            // Swap width and height for 90 degree rotation
+            canvas.width = image.height;
+            canvas.height = image.width;
+            const ctx = canvas.getContext('2d');
+
+            // Translate and rotate
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(90 * Math.PI / 180);
+            ctx.drawImage(image, -image.width / 2, -image.height / 2);
+
+            // Update image source
+            img.src = canvas.toDataURL('image/jpeg', 0.9);
+          };
+          image.src = currentSrc;
+        });
+      }
+
       // Drag events
       node.addEventListener('dragstart', handleDragStart);
       node.addEventListener('dragover', handleDragOver);
@@ -890,7 +943,7 @@ Other: 2 turtles (likely painted).</textarea>
       };
     }
 
-    $('#btnReport').addEventListener('click', () => {
+    $('#btnReport').addEventListener('click', async () => {
       const state = collectState();
 
       if (!state.reserve) {
@@ -899,189 +952,99 @@ Other: 2 turtles (likely painted).</textarea>
         return;
       }
 
-      const reportDoc = generateReportDoc(state);
+      const btn = $('#btnReport');
+      const originalText = btn.textContent;
+      btn.textContent = "Generating PDF...";
+      btn.disabled = true;
 
-      const win = window.open('', '_blank');
-      win.document.open();
-      win.document.write('<!doctype html>');
-      win.document.write(reportDoc.documentElement.outerHTML);
-      win.document.close();
+      try {
+        // Send JSON state directly to server (Server-Side Rendering)
+        const response = await fetch('/generate-pdf', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(state)
+        });
+
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Generate filename
+        const safeReserve = (state.reserve || 'Reserve').replace(/[^a-z0-9\s-_]/gi, '').trim();
+        const dateStr = state.date || new Date().toISOString().split('T')[0];
+        a.download = `Visit Report - ${safeReserve} - ${dateStr}.pdf`;
+
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+
+      } catch (err) {
+        console.error(err);
+        alert("Failed to generate PDF: " + err.message + "\n\nMake sure the python server is running!");
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
     });
 
-    function generateReportDoc(s) {
-      const doc = document.implementation.createHTMLDocument('Report');
-      const template = document.getElementById('report-template').content.cloneNode(true);
+    $('#btnWord').addEventListener('click', async () => {
+      const state = collectState();
 
-      // Extract style and body content
-      const style = template.querySelector('style');
-      const bodyContent = template.querySelector('.report-body');
-
-      if (style) {
-        doc.head.appendChild(style.cloneNode(true));
+      if (!state.reserve) {
+        alert("Please enter a Reserve / Site name before generating the report.");
+        $('#reserve').focus();
+        return;
       }
 
-      if (bodyContent) {
-        doc.body.innerHTML = bodyContent.innerHTML;
+      const btn = $('#btnWord');
+      const originalText = btn.textContent;
+      btn.textContent = "Generating Word...";
+      btn.disabled = true;
+
+      try {
+        const response = await fetch('/generate-word', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(state)
+        });
+
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        const safeReserve = (state.reserve || 'Reserve').replace(/[^a-z0-9\s-_]/gi, '').trim();
+        const dateStr = state.date || new Date().toISOString().split('T')[0];
+        a.download = `Visit Report - ${safeReserve} - ${dateStr}.docx`;
+
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+
+      } catch (err) {
+        console.error(err);
+        alert("Failed to generate Word doc: " + err.message + "\n\nMake sure the python server is running!");
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
       }
+    });
 
-      const setText = (sel, text) => {
-        const el = doc.querySelector(sel);
-        if (el) el.textContent = text || '';
-      };
-
-      const setList = (sel, text) => {
-        const el = doc.querySelector(sel);
-        if (!el) return;
-        el.innerHTML = '';
-        (text || '').split(/[,;\n]+/).map(x => x.trim()).filter(Boolean).forEach(item => {
-          const li = doc.createElement('li');
-          li.textContent = item;
-          el.appendChild(li);
-        });
-      };
-
-      setText('.data-reserve', s.reserve);
-      setText('.data-date', s.date);
-      setText('.data-observers', s.observers);
-      setText('.data-temp', s.temp);
-      setText('.data-sky', s.sky);
-      setText('.data-precip', s.precip);
-      setText('.data-start', s.start);
-      setText('.data-end', s.end);
-
-      // Set the document title, which browsers use as the default filename for "Save as PDF"
-      const safeReserve = (s.reserve || 'Reserve').replace(/[^a-z0-9\s-_]/gi, '').trim();
-      doc.title = `Visit Report - ${safeReserve} - ${s.date || 'NoDate'}`;
-
-      const setMultiLine = (sel, text) => {
-        const el = doc.querySelector(sel);
-        if (!el) return;
-        el.innerHTML = '';
-        (text || '').split('\n').forEach((line, i) => {
-          if (i > 0) el.appendChild(doc.createElement('br'));
-          el.appendChild(doc.createTextNode(line));
-        });
-      };
-
-      setMultiLine('.data-activities', s.activities);
-      setMultiLine('.data-trails', s.trails);
-      setMultiLine('.data-anthropogenic', s.anthropogenic);
-
-      setList('.data-plants', s.plants);
-      setList('.data-animals', s.animals);
-      setList('.data-fungi', s.fungi);
-
-      const photosContainer = doc.querySelector('.photos');
-      if (photosContainer) {
-        photosContainer.style.gridTemplateColumns = `repeat(${s.photoCols || 3}, 1fr)`;
-        const photoTemplate = document.getElementById('report-photo-template');
-
-        (s.photos || []).forEach(p => {
-          const pNode = photoTemplate.content.cloneNode(true);
-          const img = pNode.querySelector('img');
-          const link = pNode.querySelector('a');
-          const title = pNode.querySelector('.photo-title');
-          const notes = pNode.querySelector('.photo-notes');
-          const gpsDiv = pNode.querySelector('.photo-gps');
-
-          img.src = p.dataUrl;
-          img.alt = p.title || 'Photo';
-
-          if (p.title) {
-            title.textContent = p.title;
-          } else {
-            title.style.display = 'none';
-          }
-
-          if (p.notes) {
-            notes.textContent = p.notes;
-          } else {
-            notes.style.display = 'none';
-          }
-
-          const gpsRaw = (p.gps || '').trim();
-          if (gpsRaw && gpsRaw.includes(',')) {
-            const [lat, lon] = gpsRaw.split(',').map(v => v.trim());
-            link.href = `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lon)}`;
-            gpsDiv.textContent = `GPS: ${lat}, ${lon}`;
-          } else {
-            const parent = link.parentNode;
-            parent.replaceChild(img, link);
-            gpsDiv.style.display = 'none';
-          }
-
-          photosContainer.appendChild(pNode);
-        });
-      }
-
-      // --- Map Integration ---
-      // Collect valid GPS points
-      const gpsPoints = (s.photos || [])
-        .filter(p => p.gps && p.gps.includes(','))
-        .map(p => {
-          const [lat, lon] = p.gps.split(',').map(n => parseFloat(n.trim()));
-          return { lat, lon, title: p.title || p.name || 'Photo', url: p.dataUrl };
-        });
-
-      if (gpsPoints.length > 0) {
-        // Inject Leaflet CSS
-        const leafletCSS = doc.createElement('link');
-        leafletCSS.rel = 'stylesheet';
-        leafletCSS.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        doc.head.appendChild(leafletCSS);
-
-        // Inject Leaflet JS
-        const leafletJS = doc.createElement('script');
-        leafletJS.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        doc.head.appendChild(leafletJS);
-
-        // Inject Map Initialization Script
-        const mapScript = doc.createElement('script');
-        mapScript.textContent = `
-          window.addEventListener('load', function() {
-            // Check if Leaflet loaded successfully
-            if (typeof L === 'undefined') {
-              console.warn('Leaflet failed to load (offline?); map will remain hidden.');
-              return;
-            }
-            
-            const points = ${JSON.stringify(gpsPoints)};
-            if (points.length === 0) return;
-
-            // Show the map section
-            const mapSection = document.getElementById('map-section');
-            if (mapSection) mapSection.style.display = 'block';
-            
-            // Initialize Map
-            const map = L.map('map');
-            const bounds = L.latLngBounds();
-            
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
-
-            points.forEach(p => {
-                const icon = L.divIcon({
-                    className: 'map-photo-icon',
-                    html: '<img src="' + p.url + '" style="width: 48px; height: 48px; object-fit: cover; border-radius: 4px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4);">',
-                    iconSize: [52, 52],
-                    iconAnchor: [26, 26]
-                });
-                
-                L.marker([p.lat, p.lon], { icon: icon }).addTo(map)
-                    .bindPopup(p.title);
-                bounds.extend([p.lat, p.lon]);
-            });
-
-            map.fitBounds(bounds, { padding: [50, 50] });
-          });
-        `;
-        doc.body.appendChild(mapScript);
-      }
-
-      return doc;
-    }
 
     // ---- JSON SAVE/LOAD HELPERS ----------------------------------------------
 
