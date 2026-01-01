@@ -96,12 +96,59 @@ def add_sighting(species_id, date, count, source):
     c = conn.cursor()
     
     c.execute('''
-        INSERT INTO sightings (species_id, date, count, source)
-        VALUES (?, ?, ?, ?)
-    ''', (species_id, date, count, source))
+        SELECT id, count FROM sightings 
+        WHERE species_id = ? AND date = ?
+    ''', (species_id, date))
+    row = c.fetchone()
+    
+    if row:
+        # Update existing
+        new_count = row['count'] + count
+        c.execute('UPDATE sightings SET count = ? WHERE id = ?', (new_count, row['id']))
+        # print(f"Updated sighting for species {species_id} on {date}: new count {new_count}")
+    else:
+        # Insert new
+        c.execute('''
+            INSERT INTO sightings (species_id, date, count, source)
+            VALUES (?, ?, ?, ?)
+        ''', (species_id, date, count, source))
     
     conn.commit()
     conn.close()
+
+def deduplicate_sightings():
+    """Removes duplicate sightings, keeping only one entry per species/date."""
+    conn = get_db_connection()
+    c = conn.cursor()
+    
+    # 1. Identify duplicates: (species_id, date) having count > 1
+    # 2. For each group, keep MIN(id) (or MAX), delete others.
+    
+    print("Running deduplication...")
+    
+    c.execute('''
+        DELETE FROM sightings 
+        WHERE id NOT IN (
+            SELECT MIN(id) 
+            FROM sightings 
+            GROUP BY species_id, date
+        )
+    ''')
+    
+    deleted_count = c.rowcount
+    conn.commit()
+    conn.close()
+    return deleted_count
+
+def normalize_dates():
+    """Trims timestamps from dates (keeps first 10 chars: YYYY-MM-DD)."""
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('UPDATE sightings SET date = SUBSTR(date, 1, 10) WHERE length(date) > 10')
+    updated_count = c.rowcount
+    conn.commit()
+    conn.close()
+    return updated_count
 
 def get_all_species():
     """Returns a list of all species sorted by category and name, with sighting counts."""
@@ -120,6 +167,53 @@ def get_all_species():
     rows = c.fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+def get_all_visits():
+    """Returns a list of visits (grouped by date) with stats."""
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+        SELECT 
+            date, 
+            COUNT(id) as record_count, 
+            SUM(count) as total_individuals 
+        FROM sightings 
+        GROUP BY date 
+        ORDER BY date DESC
+    ''')
+    rows = c.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def get_visit_details(date):
+    """Returns all sightings for a specific date."""
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+        SELECT 
+            s.common_name, 
+            s.category, 
+            si.count, 
+            si.id, 
+            si.source 
+        FROM sightings si 
+        JOIN species s ON si.species_id = s.id 
+        WHERE si.date = ? 
+        ORDER BY s.category, s.common_name
+    ''', (date,))
+    rows = c.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def delete_visit(date):
+    """Deletes all sightings for a specific date."""
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('DELETE FROM sightings WHERE date = ?', (date,))
+    deleted = c.rowcount
+    conn.commit()
+    conn.close()
+    return deleted
 
 if __name__ == '__main__':
     init_db()

@@ -482,7 +482,8 @@
       <h2>Photos</h2>
       <div id="dropzone" class="dropzone noprint">
         <input id="fileInput" type="file" accept="image/*" multiple style="display:none" />
-        <p><strong>Drop images here</strong> or click to choose files</p>
+        <p><strong>Paste images</strong> or <strong>Click here</strong> to add files or <strong>Drop
+            images</strong> into this box.</p>
       </div>
       <div id="photos" class="photo-grid" style="margin-top:12px"></div>
     </div>
@@ -717,6 +718,21 @@
     ;['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
     ;['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
     dropzone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+
+    // Paste handler
+    document.addEventListener('paste', e => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      const files = [];
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file' && items[i].type.startsWith('image/')) {
+          files.push(items[i].getAsFile());
+        }
+      }
+      if (files.length > 0) {
+        e.preventDefault();
+        handleFiles(files);
+      }
+    });
 
     async function handleFiles(list) {
       const files = [...list].filter(f => f.type.startsWith('image/'));

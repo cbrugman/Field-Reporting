@@ -137,6 +137,73 @@
             font-size: 0.85em;
         }
 
+        .status-badge {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-exact {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-high {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .status-fuzzy {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+        .status-new {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-ignored {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .action-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #ccc;
+            user-select: none;
+            font-weight: bold;
+        }
+
+        .icon-btn:hover {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .active-success {
+            color: #16a34a !important;
+            background: #dcfce7 !important;
+        }
+
+        .active-danger {
+            color: #dc2626 !important;
+            background: #fee2e2 !important;
+        }
+
         /* Tabs */
         .tabs {
             display: flex;
@@ -166,6 +233,39 @@
             border-radius: 6px;
             font-size: 16px;
         }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            width: 80%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 20px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+        }
     </style>
 
 </head>
@@ -178,13 +278,18 @@
                 onchange="loadJson(this)"></div>
     </div>
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('verify')">Verify Species</div>
-        <div class="tab" onclick="switchTab('browse')">Browse Database</div>
+        <div class="tab active" onclick="switchTab('verify')">Import Sightings</div>
+        <div class="tab" onclick="switchTab('visits')">Visits</div>
+        <div class="tab" onclick="switchTab('browse')">Species List</div>
     </div>
     <!-- VERIFY TAB -->
     <div id="tab-verify">
         <div class="card">
             <p>Paste species lists below or import a JSON report to verify against the master database.</p>
+            <div style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:15px;">
+                <label for="visitDate">Visit Date:</label>
+                <input type="date" id="visitDate" class="search-box" style="margin-bottom:0; width:auto;">
+            </div>
             <div class="grid">
                 <div><label>Plants</label><textarea id="plants" placeholder="e.g. Red Oak, Trillium"></textarea>
                 </div>
@@ -196,11 +301,48 @@
         </div>
         <div id="resultsArea" style="display:none;">
             <div class="card">
-                <h2>Verification Results</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2>Verification Results</h2>
+                    <button id="commitBtn" onclick="commitVisit()" style="background:#16a34a;">Add Visit to
+                        Database</button>
+                </div>
                 <div id="resultsContent"></div>
             </div>
         </div>
     </div>
+
+    <!-- VISITS TAB -->
+    <div id="tab-visits" style="display:none;">
+        <div class="card">
+            <h2>Recorded Visits</h2>
+            <p>Click on a row to view details.</p>
+            <table id="visitsTable">
+                <thead>
+                    <tr>
+                        <th style="width:20%">Date</th>
+                        <th style="width:20%">Species Count</th>
+                        <th style="width:20%">Total Individuals</th>
+                        <th style="width:40%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="visitsTableBody">
+                    <tr>
+                        <td colspan="4">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- VISIT DETAIL MODAL -->
+    <div id="visitModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Visit Details</h2>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
     <!-- BROWSE TAB -->
     <div id="tab-browse" style="display:none;">
         <div class="card">
@@ -250,6 +392,7 @@
                     $id('plants').value = data.plants || '';
                     $id('animals').value = data.animals || '';
                     $id('fungi').value = data.fungi || '';
+                    if (data.date) $id('visitDate').value = data.date;
                     verify();
                 }
 
@@ -263,14 +406,17 @@
             input.value = ''; // reset
         }
 
+        // Global results cache
+        let currentVerificationResults = {};
+        // Global state for decisions
+        let verificationDecisions = {};
+
         async function verify() {
             const data = {
                 plants: $id('plants').value,
                 animals: $id('animals').value,
                 fungi: $id('fungi').value
-            }
-
-                ;
+            };
 
             const resultsArea = $id('resultsArea');
             const content = $id('resultsContent');
@@ -278,97 +424,258 @@
             content.innerHTML = 'Analyzing...';
 
             try {
-
                 // Assuming server is running on localhost:5000 (adjust if needed)
                 // The user is likely running this file from filesystem, so we need full URL
                 const res = await fetch('/api/verify-species', {
-
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-
-                    ,
-                    body: JSON.stringify({
-                        data: data
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: data })
                 });
 
                 if (!res.ok) throw new Error('Server Error');
                 const result = await res.json();
+                currentVerificationResults = result; // Cache results
                 renderResults(result);
 
             }
-
             catch (e) {
                 content.innerHTML = `<p style="color:red">Error connecting to server. Is server.py running?</p>`;
                 console.error(e);
             }
         }
 
+        const knownCategories = ['Plants', 'Birds', 'Mammals', 'Insects', 'Herptiles', 'Mushrooms', 'Fungi', 'Other'];
+
+        function getCategoryOptions(selected) {
+            return knownCategories.map(c => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('');
+        }
+
         function renderResults(data) {
             let html = '';
+            verificationDecisions = {}; // Reset
 
-            ['plants',
-                'animals',
-                'fungi'].forEach(cat => {
-                    const items = data[cat];
-                    if (!items || items.length === 0) return;
+            ['plants', 'animals', 'fungi'].forEach(cat => {
+                const items = data[cat];
+                if (!items || items.length === 0) return;
 
-                    // Sort: New -> Fuzzy (Low) -> Fuzzy (High) -> Exact, then Alphabetical
-                    items.sort((a, b) => {
-                        const getScore = (item) => {
-                            if (item.status === 'new') return 1;
-                            if (item.status === 'fuzzy') {
-                                return item.score >= 0.9 ? 3 : 2;
-                            }
-                            if (item.status === 'exact') return 4;
-                            return 5; // Should not happen
-                        };
-
-                        const sA = getScore(a);
-                        const sB = getScore(b);
-
-                        if (sA !== sB) return sA - sB;
-                        return a.original.localeCompare(b.original);
-                    });
-
-                    html += `<h3>${cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>`;
-                    html += `<table><thead><tr><th>Input</th><th>Status</th><th>Database Match</th></tr></thead><tbody>`;
-
-                    items.forEach(item => {
-                        let statusClass = 'status-new';
-                        let statusLabel = 'New';
-                        let matchInfo = 'No match found';
-
-                        if (item.status === 'exact') {
-                            statusClass = 'status-exact';
-                            statusLabel = 'Verified';
-
-                            matchInfo = `<b>${item.match}</b>`;
-                        }
-
-                        else if (item.status === 'fuzzy') {
-                            const score = item.score;
-
-                            if (score >= 0.9) {
-                                statusClass = 'status-high';
-                                statusLabel = `High Match (${Math.round(score * 100)}%)`;
-                            } else {
-                                statusClass = 'status-fuzzy';
-                                statusLabel = `Possible Match (${Math.round(score * 100)}%)`;
-                            }
-
-                            matchInfo = `Did you mean <b>${item.match}</b>?`;
-                        }
-
-                        html += `<tr> <td>${item.original}</td> <td><span class="${statusClass}" >${statusLabel}</span></td> <td>${matchInfo}</td> </tr>`;
-                    });
-                    html += `</tbody></table>`;
+                items.sort((a, b) => {
+                    const sA = (a.status === 'new' ? 1 : (a.status === 'fuzzy' ? (a.score >= 0.9 ? 3 : 2) : 4));
+                    const sB = (b.status === 'new' ? 1 : (b.status === 'fuzzy' ? (b.score >= 0.9 ? 3 : 2) : 4));
+                    if (sA !== sB) return sA - sB;
+                    return a.original.localeCompare(b.original);
                 });
+
+                html += `<h3>${cat.charAt(0).toUpperCase() + cat.slice(1)}</h3>`;
+                html += `<table><thead>
+                <tr>
+                    <th style="width:25%">Input</th>
+                    <th style="width:10%">Count</th>
+                    <th style="width:65%">Result & Action</th>
+                </tr></thead><tbody>`;
+
+                items.forEach((item, idx) => {
+                    const uniqueId = `${cat}-${idx}`;
+
+                    let initialAction = 'ignore';
+                    let targetName = '';
+                    let badgeHtml = '';
+
+                    // Logic to determine initial state and badge
+                    if (item.status === 'exact') {
+                        badgeHtml = `<span class="status-badge status-exact">Exact Match</span>`;
+                        initialAction = 'verify';
+                        targetName = item.match;
+                    } else if (item.status === 'fuzzy') {
+                        const pct = Math.round(item.score * 100);
+                        const cls = item.score >= 0.9 ? 'status-high' : 'status-fuzzy';
+                        badgeHtml = `<span class="status-badge ${cls}">${pct}% Match</span>`;
+                        initialAction = 'verify';
+                        targetName = item.match;
+                    } else {
+                        badgeHtml = `<span class="status-badge status-new">New Species</span>`;
+                        initialAction = 'create_new';
+                        targetName = item.original;
+                    }
+
+                    verificationDecisions[uniqueId] = {
+                        action: initialAction,
+                        item: item,
+                        cat: cat,
+                        idx: idx,
+                        baseBadge: badgeHtml
+                    };
+
+                    let extraInputs = '';
+                    if (initialAction === 'create_new') {
+                        let defCat = 'Animals';
+                        if (cat === 'plants') defCat = 'Plants';
+                        if (cat === 'fungi') defCat = 'Mushrooms';
+
+                        extraInputs = `
+                            <div id="inputs-${uniqueId}" style="margin-top:4px; display:flex; gap:5px; align-items:center;">
+                                <input type="text" id="sci-${uniqueId}" placeholder="Scientific Name" class="search-box" style="margin:0; padding:2px 5px; font-size:0.85em; width:140px; height:auto;">
+                                <select id="cat-${uniqueId}" class="search-box" style="margin:0; padding:2px 5px; font-size:0.85em; width:auto; height:auto;">
+                                    ${getCategoryOptions(defCat)}
+                                </select>
+                            </div>
+                        `;
+                    }
+
+                    html += `<tr id="row-${uniqueId}"> 
+                        <td>${item.original}</td>
+                        <td><input type="number" id="count-${uniqueId}" value="${item.count || 1}" min="1" style="width:50px"></td>
+                        <td>
+                            <div class="action-cell">
+                                <div id="badge-${uniqueId}">${badgeHtml}</div>
+                                <div style="display:flex; flex-direction:column; justify-content:center;">
+                                    <span id="target-${uniqueId}" style="font-weight:500;">${targetName}</span>
+                                    ${extraInputs}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                             <div class="action-cell" style="justify-content:flex-end;">
+                                <div class="icon-btn" onclick="toggleRowAction('${uniqueId}')" id="btn-check-${uniqueId}" title="Confirm">✓</div>
+                                <div class="icon-btn" onclick="setRowIgnore('${uniqueId}')" id="btn-x-${uniqueId}" title="Ignore">✗</div>
+                            </div>
+                        </td> 
+                    </tr>`;
+                });
+                html += `</tbody></table>`;
+            });
 
             if (!html) html = '<p>No species found to verify.</p>';
             $id('resultsContent').innerHTML = html;
+
+            Object.keys(verificationDecisions).forEach(updateRowVisuals);
+        }
+
+        function toggleRowAction(uniqueId) {
+            const state = verificationDecisions[uniqueId];
+            // If currently ignored, bring it back to its default state
+            if (state.action === 'ignore') {
+                state.action = state.item.match ? 'verify' : 'create_new';
+            }
+            // Logic to toggle between 'new' and 'match' is removed as requested for simplicity.
+            // We just re-assert the confirm state.
+            updateRowVisuals(uniqueId);
+        }
+
+        function setRowIgnore(uniqueId) {
+            verificationDecisions[uniqueId].action = 'ignore';
+            updateRowVisuals(uniqueId);
+        }
+
+        /* Dropdown logic removed as requested */
+
+        function updateRowVisuals(uniqueId) {
+            const state = verificationDecisions[uniqueId];
+            const item = state.item;
+            const action = state.action;
+
+            const btnCheck = $id(`btn-check-${uniqueId}`);
+            const btnX = $id(`btn-x-${uniqueId}`);
+            const targetSpan = $id(`target-${uniqueId}`);
+            const badgeSpan = $id(`badge-${uniqueId}`);
+            const row = $id(`row-${uniqueId}`);
+
+            // Reset base styles
+            btnCheck.className = 'icon-btn';
+            btnX.className = 'icon-btn';
+            row.style.opacity = '1';
+            targetSpan.style.textDecoration = 'none';
+            targetSpan.style.color = 'inherit';
+
+            // Restore badge if coming back from ignore
+            if (action !== 'ignore') {
+                badgeSpan.innerHTML = state.baseBadge;
+                btnCheck.classList.add('active-success');
+                // Set target text
+                if (action === 'verify') {
+                    targetSpan.innerText = item.match;
+                } else {
+                    targetSpan.innerText = item.original;
+                }
+            } else {
+                // IGNORED STATE
+                btnX.classList.add('active-danger');
+                row.style.opacity = '0.5';
+                targetSpan.innerText = item.original;
+                targetSpan.style.textDecoration = 'line-through';
+                targetSpan.style.color = '#94a3b8';
+                badgeSpan.innerHTML = `<span class="status-badge status-ignored">Ignored</span>`;
+            }
+        }
+
+        async function commitVisit() {
+            const date = $id('visitDate').value;
+            if (!date) {
+                alert("Please select a Visit Date.");
+                return;
+            }
+
+            if (!confirm("Add these sightings to the database?")) return;
+
+            const payload = {
+                date: date,
+                items: []
+            };
+
+            // Gather inputs from state
+            Object.keys(verificationDecisions).forEach(uniqueId => {
+                const state = verificationDecisions[uniqueId];
+                if (state.action === 'ignore') return;
+
+                const countInput = $id(`count-${uniqueId}`);
+                const count = parseInt(countInput.value) || 1;
+
+                // Check for new species overrides
+                const sciInput = $id(`sci-${uniqueId}`);
+                const catInput = $id(`cat-${uniqueId}`);
+                const scientificName = sciInput ? sciInput.value : null;
+                const categoryOverride = catInput ? catInput.value : null;
+
+                payload.items.push({
+                    action: state.action,
+                    original: state.item.original,
+                    category_key: state.cat, // 'plants', 'animals' etc (renamed from category to avoid confusion)
+                    category: categoryOverride, // The specific DB value selected
+                    scientific_name: scientificName,
+                    count: count,
+                    match_id: state.item.id,
+                    match_name: state.item.match
+                });
+            });
+
+            // Send logic
+            const btn = $id('commitBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/add-visit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || "Failed to save");
+                }
+
+                const result = await res.json();
+                alert(`Success! Added ${result.added} sightings.`);
+                // Reset or Switch to Browse
+                switchTab('browse');
+
+            } catch (e) {
+                alert("Error: " + e.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
 
         // --- Browse Feature ---
@@ -378,16 +685,22 @@
         function switchTab(tabName) {
             // Update Headers
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            // This is a simple hack: assuming order verify=0, browse=1
-            if (tabName === 'verify') document.querySelectorAll('.tab')[0].classList.add('active');
-            if (tabName === 'browse') document.querySelectorAll('.tab')[1].classList.add('active');
+            // HTML Order: 0=Import Sightings (verify), 1=Visits (visits), 2=Species List (browse)
+            const tabs = document.querySelectorAll('.tab');
+            if (tabName === 'verify') tabs[0].classList.add('active');
+            if (tabName === 'visits') tabs[1].classList.add('active');
+            if (tabName === 'browse') tabs[2].classList.add('active');
 
             // Toggle Content
             $id('tab-verify').style.display = (tabName === 'verify') ? 'block' : 'none';
             $id('tab-browse').style.display = (tabName === 'browse') ? 'block' : 'none';
+            $id('tab-visits').style.display = (tabName === 'visits') ? 'block' : 'none';
 
             if (tabName === 'browse' && !dbLoaded) {
                 loadDatabase();
+            }
+            if (tabName === 'visits') {
+                loadVisits();
             }
         }
 
@@ -442,6 +755,114 @@
             });
             renderDatabase(filtered);
         }
+
+        // --- Visits Feature ---
+        let visitsLoaded = false;
+
+        async function loadVisits() {
+            const tbody = $id('visitsTableBody');
+            tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+            try {
+                const res = await fetch('/api/visits');
+                if (!res.ok) throw new Error("Failed to load visits");
+                const visits = await res.json();
+
+                if (visits.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No visits recorded.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = visits.map(v => `
+                    <tr>
+                        <td><b>${v.date}</b></td>
+                        <td>${v.record_count}</td>
+                        <td>${v.total_individuals}</td>
+                        <td>
+                            <button onclick="showVisitDetails('${v.date}')" style="padding:5px 10px; font-size:0.9em; margin-right:10px;">View</button>
+                            <button onclick="deleteVisit('${v.date}')" class="secondary" style="padding:5px 10px; font-size:0.9em; background:#ef4444;">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                visitsLoaded = true;
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = `<tr><td colspan="4" style="color:red">Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        async function showVisitDetails(date) {
+            const modal = $id('visitModal');
+            const title = $id('modalTitle');
+            const body = $id('modalBody');
+
+            modal.style.display = 'block';
+            title.innerText = `Visit Details: ${date}`;
+            body.innerHTML = 'Loading...';
+
+            try {
+                const res = await fetch(`/api/visits/${date}`);
+                if (!res.ok) throw new Error("Failed to load details");
+                const details = await res.json();
+
+                if (details.length === 0) {
+                    body.innerHTML = '<p>No records found for this date.</p>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Category</th><th>Common Name</th><th>Count</th><th>Source</th></tr></thead><tbody>';
+                details.forEach(item => {
+                    html += `<tr>
+                        <td>${item.category || '-'}</td>
+                        <td><b>${item.common_name}</b></td>
+                        <td>${item.count}</td>
+                        <td>${item.source || '-'}</td>
+                   </tr>`;
+                });
+                html += '</tbody></table>';
+                body.innerHTML = html;
+
+            } catch (e) {
+                body.innerHTML = `<p style="color:red">Error: ${e.message}</p>`;
+            }
+        }
+
+        async function deleteVisit(date) {
+            if (!confirm(`Are you sure you want to delete all records for ${date}? This cannot be undone.`)) return;
+
+            try {
+                const res = await fetch(`/api/visits/${date}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error("Failed to delete");
+                const result = await res.json();
+                alert(`Deleted ${result.deleted} records.`);
+                loadVisits(); // Refresh list
+                dbLoaded = false; // Invalidate database cache as we deleted records
+            } catch (e) {
+                alert("Error deleting: " + e.message);
+            }
+        }
+
+        function closeModal() {
+            $id('visitModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = $id('visitModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+            if (!event.target.matches('.clickable-name') && !event.target.closest('.custom-dropdown')) {
+                document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('show'));
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function (event) {
+            if (event.key === "Escape") {
+                closeModal();
+            }
+        });
 
     </script>
 </body>

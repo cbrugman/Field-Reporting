@@ -119,45 +119,130 @@ def verify_species():
             # Determine allowed DB categories for this input field
             allowed_cats = category_map.get(cat)
             
-            results = []
+            # Use dictionary to merge duplicates by Key (ID or Name)
+            merged_results = {}
+
             for entry in parsed['entries']:
                 name = entry['name']
+                raw_count = entry['count']
                 
                 # Match logic
                 try:
                     exact, fuzzy = matcher.find_matches(name, allowed_categories=allowed_cats)
                 except Exception as match_err:
                     print(f"Matcher error for {name}: {match_err}")
-                    # return error immediately or skip?
                     raise match_err
                 
+                # Determine Key and Status
                 if exact:
-                    results.append({
-                        "original": name,
-                        "status": "exact",
-                        "match": exact['common_name'],
-                        "id": exact['id']
-                    })
+                    key = f"ID:{exact['id']}"
+                    status = "exact"
+                    match_name = exact['common_name']
+                    match_id = exact['id']
+                    score = 1.0
                 elif fuzzy:
-                    # Top match
                     top = fuzzy[0]
-                    results.append({
-                        "original": name,
-                        "status": "fuzzy",
-                        "match": top['common_name'],
-                        "score": top['score'],
-                        "id": top['id']
-                    })
+                    key = f"ID:{top['id']}"
+                    status = "fuzzy"
+                    match_name = top['common_name']
+                    match_id = top['id']
+                    score = top['score']
                 else:
-                    results.append({
+                    # New species: Key by normalized name to merge "Sp A" and "Sp A"
+                    norm_name = name.lower().strip()
+                    key = f"NEW:{norm_name}"
+                    status = "new"
+                    match_name = None
+                    match_id = None
+                    score = 0
+
+                # Merge Logic
+                if key in merged_results:
+                    existing = merged_results[key]
+                    existing['count'] += raw_count
+                    
+                    # Upgrade logic: If we found a BETTER match for this ID (e.g. Exact vs previously Fuzzy), update details
+                    # Or if we found a match for a previously "New" item (unlikely with this key logic, but good practice)
+                    if status == 'exact' and existing['status'] != 'exact':
+                         existing['status'] = 'exact'
+                         existing['match'] = match_name
+                         existing['score'] = 1.0
+                         # Keep original name of the FIRST one? Or append? 
+                         # Let's keep the original name of the BEST match or just the first encountered.
+                         # For verification context, showing "Var A, Var B" might be noisy. Let's stick to first.
+                else:
+                    merged_results[key] = {
                         "original": name,
-                        "status": "new",
-                        "match": None
-                    })
-            
-            response[cat] = results
+                        "status": status,
+                        "match": match_name,
+                        "id": match_id,
+                        "count": raw_count,
+                        "score": score
+                    }
+
+            # Convert map back to list
+            response[cat] = list(merged_results.values())
             
         return jsonify(response)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
+
+@app.route('/api/add-visit', methods=['POST'])
+def add_visit():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+        
+        req = request.json
+        date = req.get('date')
+        items = req.get('items', [])
+        
+        if not date:
+            return jsonify({"error": "Missing date"}), 400
+            
+        added_count = 0
+        
+        for item in items:
+            action = item.get('action')
+            count = int(item.get('count', 1))
+            category = item.get('category')
+            original_name = item.get('original')
+            
+            # Categories mapping: frontend key -> DB value
+            # Frontend uses 'plants', 'animals', 'fungi'
+            # Backend should normalize. 'plants' -> 'Plants', etc.
+            # But get_or_create_species allows passing category directly.
+            # If the frontend provides a specific category, use it.
+            # Otherwise, use the fallback map.
+            cat_map = {
+                'plants': 'Plants',
+                'animals': 'Animals',
+                'fungi': 'Fungi'
+            }
+            db_category = category if category else cat_map.get(item.get('category_key'), 'Uncategorized')
+            scientific_name = item.get('scientific_name')
+            
+            species_id = None
+            
+            if action == 'verify':
+                # Use existing ID
+                species_id = item.get('match_id')
+                if not species_id:
+                     # Fallback if no ID provided (unlikely with UI logic)
+                     species_id = database.get_or_create_species(item.get('match_name'), category=db_category)
+                     
+            elif action == 'create_new':
+                # Create with original name
+                species_id = database.get_or_create_species(original_name, scientific_name=scientific_name, category=db_category)
+                
+            if species_id:
+                database.add_sighting(species_id, date, count, source='Web Report')
+                added_count += 1
+                
+        return jsonify({"added": added_count})
+
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -168,6 +253,60 @@ def get_species():
     try:
         species_list = database.get_all_species()
         return jsonify(species_list)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/visits', methods=['GET'])
+def get_visits():
+    try:
+        visits = database.get_all_visits()
+        return jsonify(visits)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/visits/<date>', methods=['GET'])
+def get_visit_details_route(date):
+    try:
+        details = database.get_visit_details(date)
+        return jsonify(details)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/visits/<date>', methods=['DELETE'])
+def delete_visit_route(date):
+    try:
+        count = database.delete_visit(date)
+        return jsonify({"deleted": count})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/deduplicate', methods=['POST'])
+def run_deduplication():
+    try:
+        count = database.deduplicate_sightings()
+        return jsonify({"message": f"Cleaned up {count} duplicate records."})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/normalize-dates', methods=['POST'])
+def normalize_dates_route():
+    try:
+        updated = database.normalize_dates()
+        # Also re-run deduplication since merging dates might create duplicates
+        deduped = database.deduplicate_sightings()
+        return jsonify({
+            "message": f"Normalized {updated} dates. Cleaned up {deduped} resulting duplicates."
+        })
     except Exception as e:
         import traceback
         traceback.print_exc()
