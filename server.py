@@ -312,6 +312,18 @@ def normalize_dates_route():
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/species/<int:species_id>/history', methods=['GET'])
+def get_species_history_route(species_id):
+    try:
+        history = database.get_species_history(species_id)
+        return jsonify(history)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 def generate_map_from_photos(photos):
     map_image_url = None
     temp_files = [] # Keep track of temp files to delete

@@ -265,9 +265,19 @@
             font-size: 24px;
             cursor: pointer;
             color: #64748b;
+            color: #64748b;
+        }
+
+        /* Chart container override */
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
     </style>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -281,6 +291,7 @@
         <div class="tab active" onclick="switchTab('verify')">Import Sightings</div>
         <div class="tab" onclick="switchTab('visits')">Visits</div>
         <div class="tab" onclick="switchTab('browse')">Species List</div>
+        <div class="tab" onclick="switchTab('stats')">Stats</div>
     </div>
     <!-- VERIFY TAB -->
     <div id="tab-verify">
@@ -372,6 +383,31 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- STATS TAB -->
+    <div id="tab-stats" style="display:none;">
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="chart-card">
+                <h3>Biodiversity Breakdown</h3>
+                <canvas id="categoryChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Activity Timeline</h3>
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3>Species Trend Explorer</h3>
+            <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+                <label style="margin:0;">Select Species:</label>
+                <select id="trendSpeciesSelect" class="search-box" style="margin:0; width:auto;"
+                    onchange="updateTrendChart()">
+                    <option value="">Loading species...</option>
+                </select>
+            </div>
+            <canvas id="trendChart"></canvas>
         </div>
     </div>
     <script>function $id(id) {
@@ -684,22 +720,140 @@
         function switchTab(tabName) {
             // Update Headers
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            // HTML Order: 0=Import Sightings (verify), 1=Visits (visits), 2=Species List (browse)
+            // HTML Order: 0=Verify, 1=Visits, 2=Species, 3=Stats
             const tabs = document.querySelectorAll('.tab');
             if (tabName === 'verify') tabs[0].classList.add('active');
             if (tabName === 'visits') tabs[1].classList.add('active');
             if (tabName === 'browse') tabs[2].classList.add('active');
+            if (tabName === 'stats') tabs[3].classList.add('active');
 
             // Toggle Content
             $id('tab-verify').style.display = (tabName === 'verify') ? 'block' : 'none';
             $id('tab-browse').style.display = (tabName === 'browse') ? 'block' : 'none';
             $id('tab-visits').style.display = (tabName === 'visits') ? 'block' : 'none';
+            $id('tab-stats').style.display = (tabName === 'stats') ? 'block' : 'none';
 
             if (tabName === 'browse' && !dbLoaded) {
                 loadDatabase();
             }
             if (tabName === 'visits') {
                 loadVisits();
+            }
+            if (tabName === 'stats') {
+                loadStats();
+            }
+        }
+
+        // --- Stats & Charts ---
+        let categoryChartInstance = null;
+        let timelineChartInstance = null;
+        let trendChartInstance = null;
+        let statsLoaded = false;
+
+        async function loadStats() {
+            // if (statsLoaded) return; // Optional logic: Reload every time or cache? Let's reload to be fresh
+
+            try {
+                // 1. Fetch DB data if not loaded (for species list)
+                if (!dbLoaded) await loadDatabase();
+
+                // 2. Fetch Visits data (for timeline) - reusing available API or fetch again if complex
+                const resVisits = await fetch('/api/visits');
+                const visits = await resVisits.json();
+
+                // --- Render Category Chart ---
+                // Aggregated from dbCache
+                const catCounts = {};
+                dbCache.forEach(sp => {
+                    const c = sp.category || 'Uncategorized';
+                    catCounts[c] = (catCounts[c] || 0) + 1;
+                });
+
+                if (categoryChartInstance) categoryChartInstance.destroy();
+                categoryChartInstance = new Chart(document.getElementById('categoryChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(catCounts),
+                        datasets: [{
+                            data: Object.values(catCounts),
+                            backgroundColor: [
+                                '#16a34a', '#2563eb', '#d97706', '#dc2626', '#9333ea', '#0891b2', '#57534e'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: { responsive: true, plugins: { legend: { position: 'right' } } }
+                });
+
+                // --- Render Timeline Chart ---
+                // visits array has {date, record_count, total_individuals}
+                // Let's sort visits by date ascending
+                const sortedVisits = [...visits].sort((a, b) => new Date(a.date) - new Date(b.date));
+                const dates = sortedVisits.map(v => v.date);
+                const counts = sortedVisits.map(v => v.total_individuals);
+
+                if (timelineChartInstance) timelineChartInstance.destroy();
+                timelineChartInstance = new Chart(document.getElementById('timelineChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Total Individuals Observed',
+                            data: counts,
+                            backgroundColor: '#0f766e'
+                        }]
+                    },
+                    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                });
+
+                // --- Setup Trend Explorer ---
+                const select = $id('trendSpeciesSelect');
+                select.innerHTML = '<option value="">Select a Species...</option>';
+                // Sort by name
+                dbCache.sort((a, b) => a.common_name.localeCompare(b.common_name)).forEach(sp => {
+                    select.innerHTML += `<option value="${sp.id}">${sp.common_name}</option>`;
+                });
+
+                // Render empty trend chart if needed, or wait for selection
+                if (trendChartInstance) trendChartInstance.destroy();
+
+                statsLoaded = true;
+            } catch (e) {
+                console.error("Error loading stats:", e);
+            }
+        }
+
+        async function updateTrendChart() {
+            const speciesId = $id('trendSpeciesSelect').value;
+            if (!speciesId) return;
+
+            try {
+                const res = await fetch(`/api/species/${speciesId}/history`);
+                const history = await res.json();
+
+                // Now using 'year' instead of 'date'
+                const labels = history.map(h => h.year);
+                const values = history.map(h => h.total_count);
+
+                if (trendChartInstance) trendChartInstance.destroy();
+                trendChartInstance = new Chart(document.getElementById('trendChart'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Sightings',
+                            data: values,
+                            borderColor: '#2563eb',
+                            tension: 0.1,
+                            fill: false
+                        }]
+                    },
+                    options: { responsive: true, scales: { y: { beginAtZero: true, suggestedMax: 5 } } }
+                });
+
+            } catch (e) {
+                console.error("Error loading trend:", e);
+                alert("Could not load trend data.");
             }
         }
 

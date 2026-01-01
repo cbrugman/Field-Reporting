@@ -215,5 +215,20 @@ def delete_visit(date):
     conn.close()
     return deleted
 
+def get_species_history(species_id):
+    """Returns sighting history for a specific species aggregated by year."""
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+        SELECT strftime('%Y', date) as year, sum(count) as total_count 
+        FROM sightings 
+        WHERE species_id = ? 
+        GROUP BY year 
+        ORDER BY year ASC
+    ''', (species_id,))
+    rows = c.fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
 if __name__ == '__main__':
     init_db()
