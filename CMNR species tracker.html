@@ -315,7 +315,6 @@
     <div id="tab-visits" style="display:none;">
         <div class="card">
             <h2>Recorded Visits</h2>
-            <p>Click on a row to view details.</p>
             <table id="visitsTable">
                 <thead>
                     <tr>
@@ -667,8 +666,8 @@
 
                 const result = await res.json();
                 alert(`Success! Added ${result.added} sightings.`);
-                // Reset or Switch to Browse
-                switchTab('browse');
+                // Reset or Switch to Visits
+                switchTab('visits');
 
             } catch (e) {
                 alert("Error: " + e.message);
